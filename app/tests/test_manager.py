@@ -8,7 +8,6 @@ from pyvised.backend.manager import (
     BackendConfig,
     BackendManager,
     BackendState,
-    container_name_for,
     is_pullable,
     resolve_image,
 )
@@ -168,9 +167,8 @@ def test_protocol_mismatch_is_an_error(tmp_path):
     assert mgr.connection is None
 
 
-def test_helpers(monkeypatch):
-    assert container_name_for("Ménes Zsombor") == "pyvised-backend-menes-zsombor"
-    assert container_name_for("") == "pyvised-backend-user"
+def test_helpers(monkeypatch, settings):
+    assert BackendConfig.from_settings(settings).container_name == "openmc-pyvised"
     assert is_pullable("ghcr.io/zsomen2/pyvised-backend:0.1.0")
     assert not is_pullable("pyvised-backend:dev")
     monkeypatch.setenv(manager_module.IMAGE_ENV, "pyvised-backend:dev")

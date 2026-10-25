@@ -18,6 +18,7 @@ class TaskRunner(QObject):
     def __init__(self, parent: QObject | None = None, max_workers: int = 4) -> None:
         super().__init__(parent)
         self._pool = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="pyvised")
+        self._closed = False
         self._finished.connect(self._deliver)
 
     def submit(
@@ -27,6 +28,11 @@ class TaskRunner(QObject):
         on_result: Callable[[Any], None] | None = None,
         on_error: Callable[[Exception], None] | None = None,
     ) -> Future:
+        if self._closed:  # a late timer during shutdown: drop the work
+            future: Future = Future()
+            future.cancel()
+            return future
+
         def job() -> None:
             try:
                 value = func(*args)
@@ -44,4 +50,5 @@ class TaskRunner(QObject):
             callback(payload)
 
     def shutdown(self) -> None:
+        self._closed = True
         self._pool.shutdown(wait=False, cancel_futures=True)

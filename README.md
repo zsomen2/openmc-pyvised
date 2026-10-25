@@ -5,8 +5,22 @@ with geometry visualisation and simulation controls, made for teaching Monte Car
 transport. OpenMC does not run natively on Windows, so PyVised starts and manages it in a
 Docker container in the background; you only see one window.
 
-**Status:** early development. The application shell, the OpenMC 0.16.0 backend image and
-the backend lifecycle work; the geometry viewer comes next.
+**Status:** early development. The geometry viewer works: open an OpenMC model and inspect
+it in two slice views with material colours, boundary lines and a cursor read-out. Simulation
+controls come next.
+
+## Models
+
+- PyVised opens models from its workspace folder (`%USERPROFILE%\PyVised` unless changed), the
+  folder the backend container can see: a Python script that builds an `openmc.Model` and
+  exports it (`model.export_to_model_xml()`), a Jupyter notebook, or OpenMC XML (`model.xml`,
+  or `geometry.xml` with its siblings).
+- Scripts and notebooks run inside the container in export-only mode: `PYVISED_EXPORT_ONLY=1`
+  is set, and `openmc.run()`, `Model.run()`, plots and depletion are skipped. Builder
+  parameters arrive as JSON in `PYVISED_PARAMS`.
+- An optional `pyvised.json` next to the model adds a title and description in English and
+  Hungarian, the initial views, tally normalisation and builder parameters.
+- PyVised watches the model's folder and offers to reload it when a file changes.
 
 ## Requirements
 

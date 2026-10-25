@@ -7,11 +7,9 @@ Every step runs in a worker thread; progress is reported through `stateChanged`
 import hashlib
 import logging
 import os
-import re
 import secrets
 import threading
 import time
-import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
@@ -29,6 +27,7 @@ from .docker_cli import DockerCli, DockerError, find_docker, find_docker_desktop
 
 log = logging.getLogger(__name__)
 
+CONTAINER_NAME = "openmc-pyvised"
 IMAGE_ENV = "PYVISED_BACKEND_IMAGE"
 """Overrides the image, e.g. `pyvised-backend:dev` for development (see the justfile)."""
 
@@ -69,7 +68,7 @@ class BackendConfig:
         return cls(
             image=resolve_image(settings.backend_image),
             workspace=settings.workspace,
-            container_name=container_name_for(),
+            container_name=CONTAINER_NAME,
             cpus=settings.backend_cpus,
             keep_running=settings.keep_backend_running,
         )
@@ -82,14 +81,6 @@ def default_image() -> str:
 def resolve_image(configured: str) -> str:
     """Environment override, then the user's setting, then the image of this version."""
     return os.environ.get(IMAGE_ENV, "").strip() or configured.strip() or default_image()
-
-
-def container_name_for(user: str | None = None) -> str:
-    """`pyvised-backend-<user>`, reduced to the characters Docker allows in names."""
-    raw = user if user is not None else os.environ.get("USERNAME", "") or "user"
-    ascii_name = unicodedata.normalize("NFKD", raw).encode("ascii", "ignore").decode()
-    safe = re.sub(r"[^a-zA-Z0-9_.-]+", "-", ascii_name).strip("-.").lower() or "user"
-    return f"pyvised-backend-{safe}"
 
 
 def is_pullable(reference: str) -> bool:

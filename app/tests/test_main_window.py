@@ -1,10 +1,14 @@
 from pathlib import Path
 
 import pytest
+from fakes import FakeApi
 from PySide6.QtWidgets import QTabWidget
 
+from pyvised.backend.client import Connection
 from pyvised.backend.manager import BackendConfig, BackendManager
+from pyvised.core import model_session
 from pyvised.core.tasks import TaskRunner
+from pyvised.render.colorize import ColorMode
 from pyvised.ui.main_window import MainWindow
 
 
@@ -18,6 +22,7 @@ def window(qtbot, settings, tmp_path: Path):
     win = MainWindow(settings, backend, tasks)
     qtbot.addWidget(win)
     yield win
+    win.close()
     tasks.shutdown()
 
 
@@ -37,5 +42,36 @@ def test_status_pill_follows_backend_state(window: MainWindow):
     assert not window.act_selftest.isEnabled()
 
 
-def test_open_is_disabled_until_the_geometry_viewer_exists(window: MainWindow):
-    assert not window.act_open.isEnabled()
+def test_open_needs_a_ready_backend(window: MainWindow):
+    assert not window.act_open.isEnabled() and not window.act_reload.isEnabled()
+    window.backend.stateChanged.emit("ready", "0.16.0")
+    assert window.act_open.isEnabled()
+    assert not window.act_reload.isEnabled(), "nothing to reload yet"
+
+
+def test_a_model_requested_early_opens_when_the_backend_is_ready(
+    qtbot, window: MainWindow, monkeypatch, tmp_path: Path
+):
+    monkeypatch.setattr(model_session, "ApiClient", FakeApi)
+    model = tmp_path / "hw" / "model.py"
+    model.parent.mkdir()
+    model.write_text("", encoding="utf-8")
+    window.request_open(model)
+    assert window.session.path is None
+    window.backend.connection = Connection("http://127.0.0.1:1", "t")
+    with qtbot.waitSignal(window.session.opened, timeout=5000):
+        window.backend.stateChanged.emit("ready", "0.16.0")
+    assert window.windowTitle() == "PyVised — Test model"
+    assert window.settings.recent_models == [model]
+    assert window.act_reload.isEnabled()
+    assert window.geometry_tab.stack.currentIndex() == 1
+
+
+def test_colour_mode_controls_stay_in_sync(window: MainWindow):
+    window.set_color_mode(ColorMode.CELL)
+    assert window.color_combo.currentData() == "cell"
+    assert window.color_actions[ColorMode.CELL].isChecked()
+    assert not window.color_actions[ColorMode.MATERIAL].isChecked()
+    assert window.settings.color_mode == "cell"
+    window.act_lines.trigger()
+    assert window.settings.show_lines is False

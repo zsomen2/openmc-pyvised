@@ -37,6 +37,7 @@ SETTLED_STATES = {
     BackendState.DOCKER_UNAVAILABLE,
     BackendState.IMAGE_MISSING,
 }
+FAILED_STATES = SETTLED_STATES - {BackendState.READY}
 
 
 def _parse_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
@@ -46,13 +47,23 @@ def _parse_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
         "--theme", choices=[mode.value for mode in ThemeMode], help="theme for this run only"
     )
     parser.add_argument("--lang", choices=list(LANGUAGES), help="language for this run only")
+    parser.add_argument("--open", type=Path, metavar="MODEL", help="open this model at start-up")
     parser.add_argument(
         "--screenshot",
         type=Path,
         metavar="PNG",
-        help="save the window once the backend has settled, then quit",
+        help="save the window once the backend has settled (and --open has rendered), then quit",
     )
+    parser.add_argument("--size", type=_size, metavar="WxH", help="window size, e.g. 1600x1000")
     return parser.parse_known_args(argv)
+
+
+def _size(text: str) -> tuple[int, int]:
+    width, _, height = text.lower().partition("x")
+    try:
+        return int(width), int(height)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expected WIDTHxHEIGHT, got {text!r}") from None
 
 
 def _set_app_user_model_id() -> None:
@@ -69,22 +80,44 @@ def _schedule_screenshot(
     path: Path,
     *,
     wait_for_backend: bool,
+    wait_for_model: bool,
     timeout_s: int = 240,
 ) -> None:
+    done = False
+
     def capture() -> None:
+        nonlocal done
+        if done:
+            return
+        done = True
         window.grab().save(str(path))
         log.info("screenshot saved to %s", path)
+        dialog = QApplication.activeModalWidget()
+        if dialog is not None:  # e.g. an error message: saved next to the window
+            dialog_path = path.with_name(f"{path.stem}_dialog{path.suffix}")
+            dialog.grab().save(str(dialog_path))
+            log.info("open dialog saved to %s", dialog_path)
         app.quit()
 
-    if not wait_for_backend:
+    def later(*args) -> None:
+        QTimer.singleShot(500, capture)
+
+    if wait_for_model:
+        window.geometry_tab.allSharp.connect(later)
+        # an error message box blocks in the window's own slot, so look for it instead
+        poll = QTimer(window, interval=500)
+        poll.timeout.connect(lambda: later() if QApplication.activeModalWidget() else None)
+        poll.start()
+        backend.stateChanged.connect(
+            lambda state, detail: later() if BackendState(state) in FAILED_STATES else None
+        )
+    elif wait_for_backend:
+        backend.stateChanged.connect(
+            lambda state, detail: later() if BackendState(state) in SETTLED_STATES else None
+        )
+    else:
         QTimer.singleShot(800, capture)
         return
-
-    def on_state(state: str, _detail: str) -> None:
-        if BackendState(state) in SETTLED_STATES:
-            QTimer.singleShot(500, capture)
-
-    backend.stateChanged.connect(on_state)
     QTimer.singleShot(timeout_s * 1000, capture)
 
 
@@ -104,7 +137,8 @@ def main(argv: list[str] | None = None) -> int:
         QSettings(settings_file, QSettings.Format.IniFormat) if settings_file else None
     )
     apply_theme(ThemeMode(args.theme) if args.theme else settings.theme)
-    translators = install_translators(app, args.lang or settings.language)
+    language = args.lang or settings.language
+    translators = install_translators(app, language)
     app.setWindowIcon(QIcon(str(app_icon_path())))
 
     lock: QLockFile | None = None
@@ -128,16 +162,29 @@ def main(argv: list[str] | None = None) -> int:
 
     tasks = TaskRunner(app)
     backend = BackendManager(BackendConfig.from_settings(settings), parent=app)
-    window = MainWindow(settings, backend, tasks)
+    window = MainWindow(settings, backend, tasks, language=language)
+    if args.size is not None:
+        window.resize(*args.size)
     if args.screenshot is not None:
         # real platform rendering (fonts, style) without a window popping up
         window.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
     window.show()
+    model = args.open.resolve() if args.open is not None else None
+    if model is None and settings.reopen_last_model and settings.recent_models:
+        last = settings.recent_models[0]
+        model = last if last.is_file() else None
+    if model is not None and not args.no_backend:
+        window.request_open(model)
     if not args.no_backend:
         QTimer.singleShot(0, backend.start)
     if args.screenshot is not None:
         _schedule_screenshot(
-            app, window, backend, args.screenshot, wait_for_backend=not args.no_backend
+            app,
+            window,
+            backend,
+            args.screenshot,
+            wait_for_backend=not args.no_backend,
+            wait_for_model=model is not None and not args.no_backend,
         )
 
     code = app.exec()
