@@ -19,6 +19,11 @@ class Config:
     """`cross_sections.xml` of the built-in library (`OPENMC_CROSS_SECTIONS`)."""
     custom_data: Path
     """Folder whose sub-folders are the libraries the user added (mounted read-only)."""
+    cache_dir: Path = Path("/tmp/pyvised")
+    """Container-local folder for exported models and worker logs."""
+    render_workers: int = 2
+    build_timeout: float = 180.0
+    """Seconds a builder script (.py, .ipynb) may run."""
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -32,4 +37,7 @@ class Config:
             workspace=Path(os.environ.get("PYVISED_WORKSPACE", "/workspace")),
             cross_sections=Path(xs) if xs else None,
             custom_data=Path(os.environ.get("PYVISED_CUSTOM_DATA", "/data/custom")),
+            cache_dir=Path(os.environ.get("PYVISED_CACHE", "/tmp/pyvised")),
+            render_workers=max(1, int(os.environ.get("PYVISED_RENDER_WORKERS", "2"))),
+            build_timeout=float(os.environ.get("PYVISED_BUILD_TIMEOUT", "180")),
         )

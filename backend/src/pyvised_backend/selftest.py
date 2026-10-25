@@ -21,7 +21,7 @@ BATCHES = 6
 
 def build_pincell(directory: Path) -> dict[str, int]:
     """Export an infinite lattice of UO2 rods in water (the unit cell of course task 5)."""
-    import openmc
+    import openmc  # pyright: ignore[reportMissingImports]  (container only)
 
     fuel = openmc.Material(name="UO2, 10 % U-235")
     fuel.add_nuclide("U235", 0.1)
@@ -58,7 +58,7 @@ def build_pincell(directory: Path) -> dict[str, int]:
 def check_render(directory: Path, cells: dict[str, int]) -> str:
     """Load the model in plot mode and check a slice through the rod."""
     import numpy as np
-    import openmc.lib
+    import openmc.lib  # pyright: ignore[reportMissingImports]  (container only)
 
     openmc.lib.init(["-p", str(directory)], output=False)
     try:
@@ -80,7 +80,7 @@ def check_render(directory: Path, cells: dict[str, int]) -> str:
 
 def check_transport(directory: Path) -> tuple[float, float]:
     """Run OpenMC for a few batches and read k-eff from the statepoint."""
-    import openmc
+    import openmc  # pyright: ignore[reportMissingImports]  (container only)
 
     threads = str(min(4, os.cpu_count() or 1))
     proc = subprocess.run(

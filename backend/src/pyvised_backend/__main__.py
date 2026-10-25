@@ -16,7 +16,9 @@ def _serve(args: argparse.Namespace) -> int:
     import pyvised_protocol
 
     # watch the package sources (mounted by `just backend-dev`), not the working directory
-    sources = [str(Path(module.__file__).parent) for module in (pyvised_backend, pyvised_protocol)]
+    sources = [
+        str(Path(str(module.__file__)).parent) for module in (pyvised_backend, pyvised_protocol)
+    ]
     uvicorn.run(
         "pyvised_backend.server:create_app",
         factory=True,
