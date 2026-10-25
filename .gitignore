@@ -10,5 +10,19 @@ misc/
 # Docs
 docs/
 
+# Models
+models/
+
 # Python
 .venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Build output
+build/
+dist/
+
+# Compiled translations (built from the .ts files by `just i18n-build`)
+*.qm
