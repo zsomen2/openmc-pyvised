@@ -1,0 +1,14 @@
+# Agents
+.claude/
+CLAUDE.md
+.agents/
+AGENTS.md
+
+# Miscellaneous
+misc/
+
+# Docs
+docs/
+
+# Python
+.venv/
