@@ -1,16 +1,20 @@
+import time
 from pathlib import Path
 
 import pytest
 from fakes import FakeApi
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QColor, QPalette
-from PySide6.QtWidgets import QApplication, QTabWidget
+from PySide6.QtWidgets import QApplication, QMessageBox, QTabWidget
+from sim_fakes import FakeRunApi, run_info
 
 from pyvised.backend.client import Connection
 from pyvised.backend.manager import BackendConfig, BackendManager
-from pyvised.core import model_session
+from pyvised.core import model_session, run_session
 from pyvised.core.tasks import TaskRunner
 from pyvised.render.colorize import ColorMode
 from pyvised.ui.main_window import MainWindow
+from pyvised_protocol.runs import Event
 
 
 @pytest.fixture
@@ -95,3 +99,27 @@ def test_icons_follow_a_palette_change(qtbot, window: MainWindow):
         qtbot.waitUntil(lambda: icon_colour() < 100)  # dark icons again
     finally:
         QApplication.setPalette(original)
+
+
+def test_exit_stops_the_run_and_waits_for_its_results(qtbot, window: MainWindow, monkeypatch):
+    FakeRunApi.instances.clear()
+    monkeypatch.setattr(run_session, "ApiClient", FakeRunApi)
+    monkeypatch.setattr(run_session.EventStream, "start", lambda self, connection: None)
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Ok)
+    window.runs.set_connection(Connection("http://127.0.0.1:1", "t"))
+    running = run_info("run3", "running", k=None)
+    window.runs.events.received.emit(
+        Event(type="run.state", run_id="run3", data=running.model_dump(mode="json"))
+    )
+    assert window.runs.running
+    stopped = run_info("run3", "stopped", stop_reason="user")
+    QTimer.singleShot(
+        300,
+        lambda: window.runs.events.received.emit(
+            Event(type="run.finished", run_id="run3", data=stopped.model_dump(mode="json"))
+        ),
+    )
+    began = time.monotonic()
+    window.close()
+    assert FakeRunApi.instances[-1].stopped == ["run3"]
+    assert not window.runs.running and time.monotonic() - began < 10, "not the whole timeout"

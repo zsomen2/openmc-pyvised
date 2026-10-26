@@ -206,7 +206,67 @@ class AppSettings:
     def default_views(self, value: tuple[Basis, Basis]) -> None:
         self._store.setValue("geometry/default_views", ",".join(value))
 
+    # -- simulation ------------------------------------------------------------
+
+    @property
+    def run_threads(self) -> int:
+        """OpenMP threads of a run; 0 means every CPU the backend has."""
+        return max(0, self._int("simulation/threads", 0))
+
+    @run_threads.setter
+    def run_threads(self, value: int) -> None:
+        self._store.setValue("simulation/threads", max(0, int(value)))
+
+    @property
+    def run_library(self) -> str:
+        """Library id for runs ("" = the built-in library)."""
+        return str(self._store.value("simulation/library", "")).strip()
+
+    @run_library.setter
+    def run_library(self, value: str) -> None:
+        self._store.setValue("simulation/library", value.strip())
+
+    @property
+    def run_entropy_mesh(self) -> bool:
+        return self._bool("simulation/entropy_mesh", True)
+
+    @run_entropy_mesh.setter
+    def run_entropy_mesh(self, value: bool) -> None:
+        self._store.setValue("simulation/entropy_mesh", bool(value))
+
+    @property
+    def run_limits(self) -> dict[str, tuple[bool, float]]:
+        """The run form's stop conditions: name -> (on, value). Time limit in minutes,
+        σ(k-eff) in pcm, tally relative error in %."""
+        defaults = {"time_limit": 10.0, "keff_std": 50.0, "tally_rel_err": 5.0}
+        out = {}
+        for name, default in defaults.items():
+            on = self._bool(f"simulation/{name}_on", False)
+            out[name] = (on, max(0.0, self._float(f"simulation/{name}", default)) or default)
+        return out
+
+    def set_run_limit(self, name: str, on: bool, value: float) -> None:
+        self._store.setValue(f"simulation/{name}_on", bool(on))
+        self._store.setValue(f"simulation/{name}", float(value))
+
     # -- backend -------------------------------------------------------------
+
+    @property
+    def added_libraries(self) -> list[tuple[str, Path]]:
+        """Nuclear-data libraries the user added: (name, host folder with cross_sections.xml)."""
+        value = self._store.value("backend/libraries", [])
+        if isinstance(value, str):
+            value = [value]
+        out = []
+        for entry in value if isinstance(value, list) else []:
+            name, _, folder = str(entry).partition("|")
+            if name and folder:
+                out.append((name, Path(folder)))
+        return out
+
+    @added_libraries.setter
+    def added_libraries(self, value: list[tuple[str, Path]]) -> None:
+        self._store.setValue("backend/libraries", [f"{name}|{folder}" for name, folder in value])
 
     @property
     def backend_image(self) -> str:
@@ -266,6 +326,15 @@ class AppSettings:
     def geometry_splitter(self, value: QByteArray) -> None:
         self._store.setValue("window/geometry_splitter", value)
 
+    @property
+    def simulation_splitter(self) -> QByteArray | None:
+        value = self._store.value("window/simulation_splitter")
+        return value if isinstance(value, QByteArray) else None
+
+    @simulation_splitter.setter
+    def simulation_splitter(self, value: QByteArray) -> None:
+        self._store.setValue("window/simulation_splitter", value)
+
     def _enum[E: StrEnum](self, key: str, kind: type[E], default: E) -> E:
         try:
             return kind(str(self._store.value(key, default.value)))
@@ -277,3 +346,15 @@ class AppSettings:
         if isinstance(value, str):
             return value.lower() in ("1", "true", "yes")
         return bool(value)
+
+    def _int(self, key: str, default: int) -> int:
+        try:
+            return int(self._store.value(key, default))  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return default
+
+    def _float(self, key: str, default: float) -> float:
+        try:
+            return float(self._store.value(key, default))  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return default

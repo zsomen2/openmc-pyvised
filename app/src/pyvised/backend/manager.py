@@ -7,6 +7,7 @@ Every step runs in a worker thread; progress is reported through `stateChanged`
 import hashlib
 import logging
 import os
+import re
 import secrets
 import threading
 import time
@@ -50,6 +51,16 @@ class BackendState(StrEnum):
     ERROR = "error"
 
 
+CUSTOM_DATA = "/data/custom"
+"""Where added libraries appear in the container (read-only), one folder per library."""
+_LIBRARY_NAME = re.compile(r"[^A-Za-z0-9_.-]+")
+
+
+def library_mount_name(name: str) -> str:
+    """A library's folder name inside the container (it becomes part of its id)."""
+    return _LIBRARY_NAME.sub("-", name).strip("-.") or "library"
+
+
 @dataclass(frozen=True)
 class BackendConfig:
     image: str
@@ -57,11 +68,26 @@ class BackendConfig:
     container_name: str
     cpus: float = 0.0
     keep_running: bool = False
+    libraries: tuple[tuple[str, Path], ...] = ()
+    """Added nuclear-data libraries: (name, host folder), mounted read-only."""
 
     def fingerprint(self, image_id: str) -> str:
         """Label value that tells whether a running container matches this configuration."""
-        text = f"{PROTOCOL_VERSION}|{image_id}|{self.workspace}|{self.cpus:g}"
+        libraries = ";".join(f"{name}={folder}" for name, folder in self.libraries)
+        text = f"{PROTOCOL_VERSION}|{image_id}|{self.workspace}|{self.cpus:g}|{libraries}"
         return hashlib.sha256(text.encode()).hexdigest()[:16]
+
+    def mounts(self) -> list[str]:
+        """`docker run -v` values: the workspace and every added library."""
+        volumes = [f"{self.workspace}:/workspace"]
+        seen = set()
+        for name, folder in self.libraries:
+            mount = library_mount_name(name)
+            if mount in seen:
+                continue
+            seen.add(mount)
+            volumes.append(f"{folder}:{CUSTOM_DATA}/{mount}:ro")
+        return volumes
 
     @classmethod
     def from_settings(cls, settings: AppSettings) -> "BackendConfig":
@@ -71,6 +97,7 @@ class BackendConfig:
             container_name=CONTAINER_NAME,
             cpus=settings.backend_cpus,
             keep_running=settings.keep_backend_running,
+            libraries=tuple(settings.added_libraries),
         )
 
 
@@ -263,9 +290,9 @@ class BackendManager(QObject):
             f"127.0.0.1::{CONTAINER_PORT}",
             "-e",
             f"{TOKEN_ENV}={token}",
-            "-v",
-            f"{workspace}:/workspace",
         ]
+        for volume in self.config.mounts():
+            args += ["-v", volume]
         if self.config.cpus > 0:
             args += ["--cpus", f"{self.config.cpus:g}"]
         args.append(self.config.image)

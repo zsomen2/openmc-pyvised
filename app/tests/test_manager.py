@@ -176,3 +176,25 @@ def test_helpers(monkeypatch, settings):
     monkeypatch.delenv(manager_module.IMAGE_ENV)
     assert resolve_image("custom:1") == "custom:1"
     assert resolve_image("").startswith("ghcr.io/zsomen2/pyvised-backend:")
+
+
+def test_added_libraries_are_mounted_read_only(tmp_path):
+    config = BackendConfig(
+        image="i",
+        workspace=tmp_path / "ws",
+        container_name="c",
+        libraries=(("ENDF/B-VIII.0", tmp_path / "e8"), ("jeff 3.3", tmp_path / "j")),
+    )
+    assert config.mounts() == [
+        f"{tmp_path / 'ws'}:/workspace",
+        f"{tmp_path / 'e8'}:/data/custom/ENDF-B-VIII.0:ro",
+        f"{tmp_path / 'j'}:/data/custom/jeff-3.3:ro",
+    ]
+    plain = BackendConfig(image="i", workspace=tmp_path / "ws", container_name="c")
+    assert config.fingerprint("sha") != plain.fingerprint("sha"), "a new library recreates it"
+    docker = FakeDocker()
+    mgr, _ = make(tmp_path, docker)
+    mgr.config = config
+    mgr._start_sequence()
+    args = docker.run_args
+    assert f"{tmp_path / 'j'}:/data/custom/jeff-3.3:ro" in args

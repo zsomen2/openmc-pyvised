@@ -88,3 +88,22 @@ def test_recent_models_are_newest_first_without_duplicates(settings: AppSettings
     assert len(settings.recent_models) == MAX_RECENT
     settings.clear_recent_models()
     assert settings.recent_models == []
+
+
+def test_simulation_settings_and_added_libraries(tmp_path: Path):
+    path = str(tmp_path / "PyVised.ini")
+    first = AppSettings(QSettings(path, QSettings.Format.IniFormat))
+    assert first.run_threads == 0 and first.run_library == "" and first.run_entropy_mesh
+    assert first.run_limits == {
+        "time_limit": (False, 10.0),
+        "keff_std": (False, 50.0),
+        "tally_rel_err": (False, 5.0),
+    }
+    first.run_threads = 8
+    first.set_run_limit("time_limit", True, 2.5)
+    first.added_libraries = [("endfb80", Path("D:/data/endfb-viii.0"))]
+    first.sync()
+    again = AppSettings(QSettings(path, QSettings.Format.IniFormat))
+    assert again.run_threads == 8
+    assert again.run_limits["time_limit"] == (True, 2.5)
+    assert again.added_libraries == [("endfb80", Path("D:/data/endfb-viii.0"))]

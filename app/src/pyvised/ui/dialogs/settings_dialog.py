@@ -1,7 +1,9 @@
-"""Preferences: language, theme, workspace, models, geometry views and backend options."""
+"""Preferences: language, theme, workspace, models, geometry views, simulation and backend
+options, and the nuclear-data libraries the user added (mounted into the backend)."""
 
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -13,13 +15,17 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
     QPushButton,
+    QSpinBox,
     QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
-from ...backend.manager import IMAGE_ENV, default_image
+from ...backend.manager import IMAGE_ENV, default_image, library_mount_name
 from ...core.settings import LANGUAGES, AppSettings, PlotBackground, ReloadPolicy, ThemeMode
 
 
@@ -118,6 +124,25 @@ class SettingsDialog(QDialog):
         geometry_form.addRow(self.tr("Boundary lines between:"), self.line_mode)
         geometry_form.addRow(self.tr("Line width:"), self.line_width)
 
+        # -- simulation ------------------------------------------------------
+        self.run_threads = QSpinBox()
+        self.run_threads.setRange(0, 1024)
+        self.run_threads.setSpecialValueText(self.tr("all CPUs of the backend"))
+        self.run_threads.setValue(settings.run_threads)
+        self.run_entropy = QCheckBox(
+            self.tr("Shannon entropy for eigenvalue runs (adds a mesh when the model has none)")
+        )
+        self.run_entropy.setChecked(settings.run_entropy_mesh)
+        simulation = QWidget()
+        simulation_form = QFormLayout(simulation)
+        simulation_form.addRow(self.tr("Threads per run:"), self.run_threads)
+        simulation_form.addRow("", self.run_entropy)
+        simulation_form.addRow(
+            "",
+            QLabel(self.tr("Statepoints are written every ~5 % of the batches, so a stopped run "
+                           "keeps its results.")),
+        )  # fmt: skip
+
         # -- backend ---------------------------------------------------------
         self.image = QLineEdit(settings.backend_image)
         self.image.setPlaceholderText(default_image())
@@ -143,10 +168,36 @@ class SettingsDialog(QDialog):
             backend_form.addRow("", note)
         backend_form.addRow(self.tr("CPU limit:"), self.cpus)
         backend_form.addRow("", self.keep_running)
+        self.libraries = QListWidget()
+        self.libraries.setMaximumHeight(110)
+        for name, folder in settings.added_libraries:
+            self._add_library_item(name, folder)
+        add_library = QPushButton(self.tr("Add…"))
+        add_library.clicked.connect(self._choose_library)
+        remove_library = QPushButton(self.tr("Remove"))
+        remove_library.clicked.connect(self._remove_library)
+        library_buttons = QVBoxLayout()
+        library_buttons.addWidget(add_library)
+        library_buttons.addWidget(remove_library)
+        library_buttons.addStretch()
+        library_row = QHBoxLayout()
+        library_row.addWidget(self.libraries, 1)
+        library_row.addLayout(library_buttons)
+        backend_form.addRow(self.tr("Added libraries:"), library_row)
+        library_note = QLabel(
+            self.tr(
+                "Folders with a cross_sections.xml, e.g. a library from openmc.org. The "
+                "built-in ENDF/B-VII.1 library is always there. Changing the list restarts "
+                "the backend."
+            )
+        )
+        library_note.setWordWrap(True)
+        backend_form.addRow("", library_note)
 
-        tabs = QTabWidget()
+        self.tabs = tabs = QTabWidget()
         tabs.addTab(general, self.tr("General"))
         tabs.addTab(geometry, self.tr("Geometry"))
+        tabs.addTab(simulation, self.tr("Simulation"))
         tabs.addTab(backend, self.tr("Backend"))
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -156,6 +207,53 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(tabs)
         layout.addWidget(buttons)
+
+    def show_page(self, name: str) -> None:
+        """Open on a tab: "general", "geometry", "simulation" or "backend"."""
+        pages = {"general": 0, "geometry": 1, "simulation": 2, "backend": 3}
+        if name in pages:
+            self.tabs.setCurrentIndex(pages[name])
+
+    def _add_library_item(self, name: str, folder: Path) -> None:
+        item = QListWidgetItem(f"{name} — {folder}")
+        item.setData(Qt.ItemDataRole.UserRole, (name, str(folder)))
+        item.setToolTip(str(folder))
+        self.libraries.addItem(item)
+
+    def library_list(self) -> list[tuple[str, Path]]:
+        out = []
+        for row in range(self.libraries.count()):
+            item = self.libraries.item(row)
+            name, folder = item.data(Qt.ItemDataRole.UserRole)
+            out.append((name, Path(folder)))
+        return out
+
+    def _choose_library(self) -> None:
+        folder = QFileDialog.getExistingDirectory(
+            self, self.tr("Choose a library folder (with cross_sections.xml)")
+        )
+        if not folder:
+            return
+        path = Path(folder)
+        if not (path / "cross_sections.xml").is_file():
+            QMessageBox.warning(
+                self,
+                self.tr("Library"),
+                self.tr("{folder} has no cross_sections.xml.").format(folder=path),
+            )
+            return
+        name = library_mount_name(path.name)
+        taken = {library_mount_name(n) for n, _ in self.library_list()}
+        number = 2
+        base = name
+        while name in taken:
+            name = f"{base}-{number}"
+            number += 1
+        self._add_library_item(name, path)
+
+    def _remove_library(self) -> None:
+        for item in self.libraries.selectedItems():
+            self.libraries.takeItem(self.libraries.row(item))
 
     def _browse_workspace(self) -> None:
         folder = QFileDialog.getExistingDirectory(
@@ -182,6 +280,9 @@ class SettingsDialog(QDialog):
             "backend_image": self.image.text().strip(),
             "keep_backend_running": self.keep_running.isChecked(),
             "backend_cpus": float(self.cpus.value()),
+            "run_threads": int(self.run_threads.value()),
+            "run_entropy_mesh": self.run_entropy.isChecked(),
+            "added_libraries": self.library_list(),
         }
         changed = {name for name, value in new.items() if getattr(s, name) != value}
         for name in changed:

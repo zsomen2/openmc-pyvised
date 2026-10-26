@@ -7,7 +7,7 @@ import platform
 from pathlib import Path
 
 import PySide6
-from PySide6.QtCore import QEvent, QSize, Qt, QUrl, qVersion
+from PySide6.QtCore import QEvent, QEventLoop, QSize, Qt, QTimer, QUrl, qVersion
 from PySide6.QtGui import (
     QAction,
     QActionGroup,
@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMenu,
     QMessageBox,
+    QProgressDialog,
     QSizePolicy,
     QTabWidget,
     QToolBar,
@@ -37,6 +38,7 @@ from ..backend.client import ApiClient
 from ..backend.manager import IMAGE_ENV, BackendConfig, BackendManager, BackendState
 from ..core.icons import icon
 from ..core.model_session import MODEL_SUFFIXES, ModelSession
+from ..core.run_session import RunSession
 from ..core.settings import AppSettings, ReloadPolicy
 from ..core.tasks import TaskRunner
 from ..core.theme import apply_theme
@@ -46,14 +48,17 @@ from ..render.scales import format_value
 from .dialogs.about import AboutDialog
 from .dialogs.settings_dialog import SettingsDialog
 from .dialogs.text_dialog import TextDialog
-from .empty_state import EmptyState
 from .geometry.geometry_tab import GeometryTab
+from .simulation.simulation_tab import SimulationTab
 from .status_pill import StatusPill
 
 log = logging.getLogger(__name__)
 
-BACKEND_SETTINGS = {"workspace", "backend_image", "backend_cpus"}
+BACKEND_SETTINGS = {"workspace", "backend_image", "backend_cpus", "added_libraries"}
 GEOMETRY_SETTINGS = {"render_quality", "plot_background", "line_mode", "line_width"}
+RUN_SETTINGS = {"run_threads", "run_entropy_mesh"}
+RUN_END_TIMEOUT_MS = 60_000
+"""How long exit and backend restart wait for a stopped run to save its results."""
 
 
 class MainWindow(QMainWindow):
@@ -71,20 +76,19 @@ class MainWindow(QMainWindow):
         self.backend = backend
         self.tasks = tasks
         self.session = ModelSession(tasks, self)
+        self.runs = RunSession(tasks, self)
         self._pending_open: Path | None = None
         self._backend_ready = False
         self.setMinimumSize(900, 600)
 
         self.geometry_tab = GeometryTab(self.session, settings, language=self.language)
-        self.simulation_page = EmptyState(
-            "mdi6.chart-bell-curve-cumulative",
-            self.tr("No model open"),
-            self.tr("Simulation controls arrive in a later development phase."),
+        self.simulation_tab = SimulationTab(
+            self.session, self.runs, settings, language=self.language
         )
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
         self.tabs.addTab(self.geometry_tab, self.tr("Geometry"))
-        self.tabs.addTab(self.simulation_page, self.tr("Simulation"))
+        self.tabs.addTab(self.simulation_tab, self.tr("Simulation"))
         self.setCentralWidget(self.tabs)
 
         self._create_actions()
@@ -114,6 +118,9 @@ class MainWindow(QMainWindow):
         self.geometry_tab.reloadRequested.connect(self.reload_model)
         self.geometry_tab.statusMessage.connect(
             lambda text: self.statusBar().showMessage(text, 6000)
+        )
+        self.simulation_tab.statusMessage.connect(
+            lambda text: self.statusBar().showMessage(text, 8000)
         )
 
         backend.stateChanged.connect(self._on_backend_state)
@@ -164,6 +171,9 @@ class MainWindow(QMainWindow):
         self.act_backend_log = self._action(self.tr("Backend &log…"), self.show_backend_log)
         self.act_diagnostics = self._action(self.tr("Copy &diagnostics"), self.copy_diagnostics)
         self.act_restart = self._action(self.tr("&Restart backend"), self.restart_backend)
+        self.act_libraries = self._action(
+            self.tr("Nuclear-data &libraries…"), lambda: self.open_settings("backend")
+        )
         self.act_settings = self._action(
             self.tr("&Preferences…"), self.open_settings, QKeySequence.StandardKey.Preferences
         )
@@ -217,6 +227,7 @@ class MainWindow(QMainWindow):
         tools.addAction(self.act_selftest)
         tools.addAction(self.act_backend_log)
         tools.addAction(self.act_diagnostics)
+        tools.addAction(self.act_libraries)
         tools.addSeparator()
         tools.addAction(self.act_restart)
         settings_menu = bar.addMenu(self.tr("&Settings"))
@@ -303,8 +314,9 @@ class MainWindow(QMainWindow):
         self.act_restart.setIcon(icon("mdi6.restart"))
         self.tabs.setTabIcon(0, icon("mdi6.cube-outline"))
         self.tabs.setTabIcon(1, icon("mdi6.chart-bell-curve-cumulative"))
+        self.act_libraries.setIcon(icon("mdi6.database-outline"))
         self.geometry_tab.refresh_icon()
-        self.simulation_page.refresh_icon()
+        self.simulation_tab.refresh_icons()
 
     def _restore_window(self) -> None:
         geometry = self.settings.window_geometry
@@ -316,6 +328,7 @@ class MainWindow(QMainWindow):
         if state is not None:
             self.restoreState(state)
         self.geometry_tab.restore_state(self.settings.geometry_splitter)
+        self.simulation_tab.restore_state(self.settings.simulation_splitter)
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
@@ -325,11 +338,64 @@ class MainWindow(QMainWindow):
             self._refresh_icons()
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        if self.runs.running:
+            if not self._confirm_run_ends(exiting=True):
+                event.ignore()
+                return
+            if not self.backend.config.keep_running:
+                self._stop_run_and_wait()
         self.settings.window_geometry = self.saveGeometry()
         self.settings.window_state = self.saveState()
         self.settings.geometry_splitter = self.geometry_tab.save_state()
+        self.settings.simulation_splitter = self.simulation_tab.save_state()
         self.settings.sync()
+        self.runs.shutdown()
         super().closeEvent(event)
+
+    def _confirm_run_ends(self, *, exiting: bool) -> bool:
+        """Ask before something ends the running simulation (exit, backend restart)."""
+        if exiting and self.backend.config.keep_running:
+            text = self.tr(
+                "A simulation is running. It keeps running in the backend, and PyVised shows "
+                "it again at the next start."
+            )
+        else:
+            text = self.tr(
+                "A simulation is running. It stops now and keeps the results of its latest "
+                "statepoint."
+            )
+        title = self.tr("Exit") if exiting else self.tr("Restart backend")
+        buttons = QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+        answer = QMessageBox.question(self, title, text, buttons, QMessageBox.StandardButton.Cancel)
+        return answer == QMessageBox.StandardButton.Ok
+
+    def _stop_run_and_wait(self) -> None:
+        """Stop the running simulation and wait until the backend has saved its results, so
+        stopping the container does not cut them off."""
+        loop = QEventLoop()  # kept alive by the callbacks while they can still come
+        if not self.runs.stop(on_error=lambda _error: loop.quit()):
+            return
+        dialog = QProgressDialog(
+            self.tr("Stopping the simulation and saving its results…"),
+            self.tr("Do not wait"),
+            0,
+            0,
+            self,
+        )
+        dialog.setWindowTitle(self.tr("Simulation"))
+        dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        dialog.setMinimumDuration(0)
+        dialog.canceled.connect(loop.quit)
+        self.runs.finished.connect(loop.quit)
+        timer = QTimer(loop)
+        timer.setSingleShot(True)
+        timer.timeout.connect(loop.quit)
+        timer.start(RUN_END_TIMEOUT_MS)
+        dialog.show()
+        if self.runs.running:
+            loop.exec()
+        self.runs.finished.disconnect(loop.quit)
+        dialog.close()
 
     def _update_actions(self) -> None:
         ready = self._backend_ready
@@ -464,6 +530,8 @@ class MainWindow(QMainWindow):
 
     def _model_opening(self, name: str) -> None:
         self.statusBar().showMessage(self.tr("Opening {name}…").format(name=name))
+        self.geometry_tab.set_busy(True)
+        self.simulation_tab.set_busy(True)
         self._update_actions()
 
     def _model_opened(self, info: ModelInfo, reloaded: bool) -> None:
@@ -471,11 +539,15 @@ class MainWindow(QMainWindow):
         if self.session.path is not None:
             self.settings.add_recent_model(self.session.path)
             self.settings.sync()
+        self.geometry_tab.set_busy(False)
+        self.simulation_tab.set_busy(False)
         self.geometry_tab.show_model(info, reloaded)
+        self.simulation_tab.show_model(info)
         self._fill_mode_controls(info)
         if self.geometry_tab.color_mode is ColorMode.IMPORTANCE and not info.weight_windows:
             self.set_color_mode(ColorMode.MATERIAL)
-        self.tabs.setCurrentWidget(self.geometry_tab)
+        if not reloaded:
+            self.tabs.setCurrentWidget(self.geometry_tab)
         self._update_title()
         self._update_actions()
         if info.warnings:
@@ -486,6 +558,8 @@ class MainWindow(QMainWindow):
     def _model_failed(self, message: str, detail: str) -> None:
         log.warning("opening a model failed: %s: %s", message, detail)
         self.statusBar().clearMessage()
+        self.geometry_tab.set_busy(False)
+        self.simulation_tab.set_busy(False)
         self._update_actions()
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Warning)
@@ -512,6 +586,8 @@ class MainWindow(QMainWindow):
         connection = self.backend.connection
         if ready and connection is not None and not self.session.ready:
             self.session.set_connection(connection, self.backend.config.workspace)
+            self.runs.set_connection(connection)
+            self.simulation_tab.set_backend(self.backend.health)
             if self._pending_open is not None:
                 path, self._pending_open = self._pending_open, None
                 self.session.open(path)
@@ -519,12 +595,18 @@ class MainWindow(QMainWindow):
                 self.session.reload()  # a restarted backend has forgotten the model
         elif not ready and self.session.ready:
             self.session.set_connection(None, self.backend.config.workspace)
+            self.runs.set_connection(None)
+            self.simulation_tab.set_backend(None)
         self._update_actions()
 
     def backend_config(self) -> BackendConfig:
         return BackendConfig.from_settings(self.settings)
 
     def restart_backend(self) -> None:
+        if self.runs.running:
+            if not self._confirm_run_ends(exiting=False):
+                return
+            self._stop_run_and_wait()
         self.backend.restart(self.backend_config())
 
     def show_backend_details(self) -> None:
@@ -643,8 +725,9 @@ class MainWindow(QMainWindow):
         folder.mkdir(parents=True, exist_ok=True)
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder)))
 
-    def open_settings(self) -> None:
+    def open_settings(self, page: str = "") -> None:
         dialog = SettingsDialog(self.settings, self, image_override=os.environ.get(IMAGE_ENV, ""))
+        dialog.show_page(page)
         if dialog.exec() != SettingsDialog.DialogCode.Accepted:
             return
         changed = dialog.apply()
@@ -656,6 +739,8 @@ class MainWindow(QMainWindow):
             )
         if changed & GEOMETRY_SETTINGS:
             self.geometry_tab.apply_settings()
+        if changed & RUN_SETTINGS:
+            self.simulation_tab.form.apply_settings()
         if changed & BACKEND_SETTINGS:
             self.restart_backend()
         elif "keep_backend_running" in changed:

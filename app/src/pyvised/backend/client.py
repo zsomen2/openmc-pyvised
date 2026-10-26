@@ -3,11 +3,21 @@
 from dataclasses import dataclass
 
 import httpx
+import numpy as np
 
-from pyvised_protocol import API_PREFIX
+from pyvised_protocol import API_PREFIX, frames
+from pyvised_protocol.runs import (
+    LogChunk,
+    RunInfo,
+    RunRequest,
+    RunResults,
+    RunStatus,
+    TallyResult,
+)
 from pyvised_protocol.schemas import (
     HealthInfo,
     InspectResult,
+    LibraryInfo,
     ModelInfo,
     OpenModelRequest,
     SelfTestResult,
@@ -17,6 +27,18 @@ from pyvised_protocol.slices import SliceData, decode_slice
 
 OPEN_TIMEOUT = 300.0
 """Opening runs the model's builder script, which may take a while."""
+RUN_START_TIMEOUT = OPEN_TIMEOUT + 60.0
+"""Starting a run exports the model with its parameters first."""
+
+
+@dataclass(frozen=True)
+class TallyData:
+    """A tally of a run's results: mean and σ in the tally's shape (see `TallyResult`)."""
+
+    tally: TallyResult
+    mean: np.ndarray
+    std: np.ndarray
+    statepoint: str = ""
 
 
 class BackendError(RuntimeError):
@@ -105,3 +127,51 @@ class ApiClient:
             "GET", f"/models/{model_id}/inspect", params={"x": x, "y": y, "z": z}, timeout=60.0
         )
         return InspectResult.model_validate(response.json())
+
+    def libraries(self) -> list[LibraryInfo]:
+        return [LibraryInfo.model_validate(x) for x in self._request("GET", "/libraries").json()]
+
+    # -- runs ----------------------------------------------------------------------------
+
+    def start_run(self, request: RunRequest) -> RunInfo:
+        response = self._request(
+            "POST", "/runs", json=request.model_dump(mode="json"), timeout=RUN_START_TIMEOUT
+        )
+        return RunInfo.model_validate(response.json())
+
+    def runs(self, model: str) -> list[RunInfo]:
+        """The runs of the workspace-relative model `model`, newest first."""
+        response = self._request("GET", "/runs", params={"model": model}, timeout=60.0)
+        return [RunInfo.model_validate(item) for item in response.json()]
+
+    def active_run(self) -> RunStatus | None:
+        data = self._request("GET", "/runs/active").json()
+        return RunStatus.model_validate(data) if data is not None else None
+
+    def run_status(self, run_id: str) -> RunStatus:
+        return RunStatus.model_validate(self._request("GET", f"/runs/{run_id}").json())
+
+    def stop_run(self, run_id: str) -> RunInfo:
+        return RunInfo.model_validate(self._request("POST", f"/runs/{run_id}/stop").json())
+
+    def delete_run(self, run_id: str) -> None:
+        self._request("DELETE", f"/runs/{run_id}")
+
+    def run_log(self, run_id: str, offset: int = 0) -> LogChunk:
+        response = self._request("GET", f"/runs/{run_id}/log", params={"offset": offset})
+        return LogChunk.model_validate(response.json())
+
+    def run_results(self, run_id: str) -> RunResults:
+        # an interrupted run is summarised on demand, which reads its statepoint
+        response = self._request("GET", f"/runs/{run_id}/results", timeout=OPEN_TIMEOUT)
+        return RunResults.model_validate(response.json())
+
+    def tally_data(self, run_id: str, tally_id: int) -> TallyData:
+        response = self._request("GET", f"/runs/{run_id}/tallies/{tally_id}", timeout=120.0)
+        frame = frames.decode(response.content)
+        return TallyData(
+            tally=TallyResult.model_validate(frame.meta["tally"]),
+            mean=frame.arrays["mean"],
+            std=frame.arrays["std"],
+            statepoint=str(frame.meta.get("statepoint", "")),
+        )
