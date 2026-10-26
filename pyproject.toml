@@ -1,0 +1,41 @@
+# PyVised uv workspace (virtual root: it only groups the members and the dev tools).
+#   app/       desktop client (package `pyvised`, PySide6)
+#   backend/   OpenMC service that runs inside the Docker container (packages `pyvised_backend`
+#              and `pyvised_course`, the helpers for course models)
+#   protocol/  schemas and binary frames shared by both (package `pyvised_protocol`)
+
+[tool.uv.workspace]
+members = ["app", "backend", "protocol"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14",
+    "pytest>=8.4",
+    "pytest-qt>=4.5",
+    "respx>=0.22",
+    "pyright>=1.1.400",
+]
+build = ["pyinstaller>=6.22"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["misc", "docs", "models"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+# physics text uses ×, ±, σ, µ … on purpose
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pyvised", "pyvised_backend", "pyvised_course", "pyvised_protocol"]
+
+[tool.pytest.ini_options]
+testpaths = ["protocol/tests", "backend/tests", "app/tests"]
+qt_api = "pyside6"
+markers = ["openmc: needs OpenMC, runs inside the backend container"]
+
+[tool.pyright]
+include = ["app/src", "protocol/src", "backend/src"]
+pythonVersion = "3.13"
+typeCheckingMode = "basic"

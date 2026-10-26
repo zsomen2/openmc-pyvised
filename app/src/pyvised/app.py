@@ -1,0 +1,220 @@
+"""Start-up: logging, Qt, settings, theme, translations, the backend and the main window."""
+
+import argparse
+import contextlib
+import ctypes
+import logging
+import os
+import sys
+from pathlib import Path
+
+os.environ.setdefault("QT_API", "pyside6")
+os.environ.setdefault("PYQTGRAPH_QT_LIB", "PySide6")
+
+from PySide6.QtCore import QCoreApplication, QLockFile, QSettings, Qt, QTimer
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
+
+from . import __version__, self_test
+from .backend.manager import BackendConfig, BackendManager, BackendState
+from .core.i18n import install_translators
+from .core.logging_setup import configure_logging
+from .core.paths import app_icon_path, local_data_dir
+from .core.settings import LANGUAGES, AppSettings, ThemeMode
+from .core.tasks import TaskRunner
+from .core.theme import apply_theme, choose_style
+from .ui.main_window import MainWindow
+
+log = logging.getLogger(__name__)
+
+APP_USER_MODEL_ID = "PyVised.Desktop"
+SETTINGS_ENV = "PYVISED_SETTINGS"
+"""Path of an INI file to use instead of the user's settings (development, tests)."""
+SETTLED_STATES = {
+    BackendState.READY,
+    BackendState.ERROR,
+    BackendState.DOCKER_MISSING,
+    BackendState.DOCKER_UNAVAILABLE,
+    BackendState.IMAGE_MISSING,
+}
+FAILED_STATES = SETTLED_STATES - {BackendState.READY}
+
+
+def _parse_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
+    parser = argparse.ArgumentParser(prog="pyvised", description="PyVised, a GUI for OpenMC")
+    parser.add_argument("--no-backend", action="store_true", help="do not start the OpenMC backend")
+    parser.add_argument(
+        "--theme", choices=[mode.value for mode in ThemeMode], help="theme for this run only"
+    )
+    parser.add_argument("--lang", choices=list(LANGUAGES), help="language for this run only")
+    parser.add_argument("--open", type=Path, metavar="MODEL", help="open this model at start-up")
+    parser.add_argument(
+        "--screenshot",
+        type=Path,
+        metavar="PNG",
+        help="save the window once the backend has settled (and --open has rendered), then quit",
+    )
+    parser.add_argument("--size", type=_size, metavar="WxH", help="window size, e.g. 1600x1000")
+    parser.add_argument(
+        "--self-test",
+        action="store_true",
+        help="check this installation without a window (the backend too unless --no-backend), "
+        "write a report and exit with 0 if everything passed",
+    )
+    parser.add_argument(
+        "--report", type=Path, metavar="FILE", help="where --self-test writes its report"
+    )
+    return parser.parse_known_args(argv)
+
+
+def _size(text: str) -> tuple[int, int]:
+    width, _, height = text.lower().partition("x")
+    try:
+        return int(width), int(height)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expected WIDTHxHEIGHT, got {text!r}") from None
+
+
+def _set_app_user_model_id() -> None:
+    """Group the taskbar button under PyVised's own icon instead of python.exe."""
+    if sys.platform == "win32":
+        with contextlib.suppress(AttributeError, OSError):
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_USER_MODEL_ID)
+
+
+def _schedule_screenshot(
+    app: QApplication,
+    window: MainWindow,
+    backend: BackendManager,
+    path: Path,
+    *,
+    wait_for_backend: bool,
+    wait_for_model: bool,
+    timeout_s: int = 240,
+) -> None:
+    done = False
+
+    def capture() -> None:
+        nonlocal done
+        if done:
+            return
+        done = True
+        window.grab().save(str(path))
+        log.info("screenshot saved to %s", path)
+        dialog = QApplication.activeModalWidget()
+        if dialog is not None:  # e.g. an error message: saved next to the window
+            dialog_path = path.with_name(f"{path.stem}_dialog{path.suffix}")
+            dialog.grab().save(str(dialog_path))
+            log.info("open dialog saved to %s", dialog_path)
+        setup = window.setup_dialog
+        if setup is not None and setup.isVisible():
+            setup_path = path.with_name(f"{path.stem}_setup{path.suffix}")
+            setup.grab().save(str(setup_path))
+            log.info("backend setup dialog saved to %s", setup_path)
+        app.quit()
+
+    def later(*args) -> None:
+        QTimer.singleShot(500, capture)
+
+    if wait_for_model:
+        window.geometry_tab.allSharp.connect(later)
+        # an error message box blocks in the window's own slot, so look for it instead
+        poll = QTimer(window, interval=500)
+        poll.timeout.connect(lambda: later() if QApplication.activeModalWidget() else None)
+        poll.start()
+        backend.stateChanged.connect(
+            lambda state, detail: later() if BackendState(state) in FAILED_STATES else None
+        )
+    elif wait_for_backend:
+        backend.stateChanged.connect(
+            lambda state, detail: later() if BackendState(state) in SETTLED_STATES else None
+        )
+    else:
+        QTimer.singleShot(800, capture)
+        return
+    QTimer.singleShot(timeout_s * 1000, capture)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args, qt_args = _parse_args(sys.argv[1:] if argv is None else argv)
+    configure_logging()
+    log.info("PyVised %s starting", __version__)
+    _set_app_user_model_id()
+    QApplication.setOrganizationName("PyVised")
+    QApplication.setApplicationName("PyVised")
+    QApplication.setApplicationVersion(__version__)
+    app = QApplication([sys.argv[0], *qt_args])
+    app.setStyle(choose_style())
+
+    settings_file = os.environ.get(SETTINGS_ENV)
+    settings = AppSettings(
+        QSettings(settings_file, QSettings.Format.IniFormat) if settings_file else None
+    )
+    apply_theme(ThemeMode(args.theme) if args.theme else settings.theme)
+    language = args.lang or settings.language
+    translators = install_translators(app, language)
+    app.setWindowIcon(QIcon(str(app_icon_path())))
+
+    lock: QLockFile | None = None
+    if args.screenshot is None:
+        local_data_dir().mkdir(parents=True, exist_ok=True)
+        lock = QLockFile(str(local_data_dir() / "pyvised.lock"))
+        if not lock.tryLock(100):
+            if args.self_test:
+                return self_test.blocked(args.report)
+            QMessageBox.information(
+                None, "PyVised", QCoreApplication.translate("main", "PyVised is already running.")
+            )
+            return 1
+        if args.self_test:
+            code = self_test.run_self_test(
+                app, settings, report_path=args.report, backend=not args.no_backend
+            )
+            lock.unlock()
+            del translators
+            return code
+        if settings.ask_workspace_at_startup:
+            folder = QFileDialog.getExistingDirectory(
+                None,
+                QCoreApplication.translate("main", "Choose the workspace folder"),
+                str(settings.workspace),
+            )
+            if folder:
+                settings.workspace = Path(folder)
+                settings.sync()
+
+    tasks = TaskRunner(app)
+    backend = BackendManager(BackendConfig.from_settings(settings), parent=app)
+    window = MainWindow(settings, backend, tasks, language=language)
+    if args.size is not None:
+        window.resize(*args.size)
+    if args.screenshot is not None:
+        # real platform rendering (fonts, style) without a window popping up
+        window.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
+    window.show()
+    model = args.open.resolve() if args.open is not None else None
+    if model is None and settings.reopen_last_model and settings.recent_models:
+        last = settings.recent_models[0]
+        model = last if last.is_file() else None
+    if model is not None and not args.no_backend:
+        window.request_open(model)
+    if not args.no_backend:
+        QTimer.singleShot(0, backend.start)
+    if args.screenshot is not None:
+        _schedule_screenshot(
+            app,
+            window,
+            backend,
+            args.screenshot,
+            wait_for_backend=not args.no_backend,
+            wait_for_model=model is not None and not args.no_backend,
+        )
+
+    code = app.exec()
+    tasks.shutdown()
+    if not args.no_backend:
+        backend.shutdown()
+    if lock is not None:
+        lock.unlock()
+    del translators
+    return code

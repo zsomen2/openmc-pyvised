@@ -1,0 +1,13 @@
+# Conda environment of the backend image (conda-forge only).
+# OpenMC 0.16.0 comes from conda-forge because the official openmc/openmc:v0.16.0
+# Docker image was built from the 0.15.3 sources.
+name: base
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  - openmc=0.16.0=nodagmc_nompi_py313*
+  - pip
+  - fastapi>=0.115
+  - uvicorn>=0.32
+  - pydantic>=2.9

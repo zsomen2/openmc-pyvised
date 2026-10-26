@@ -1,0 +1,200 @@
+# Release: a version tag (v1.0.0, v0.1.0-alpha, ...) builds and checks everything, then pushes the
+# backend image to ghcr.io and drafts a GitHub release with the installer, the offline image
+# file and their checksums. Nothing is published unless every check passed. Publish the draft
+# once it has been tried (e.g. on a lab PC). A manual run builds and checks everything and
+# keeps the files as workflow artifacts for 7 days, but publishes nothing.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      image: ${{ steps.version.outputs.image }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # only full version tags exist
+      - id: version
+        name: One version for app, backend and protocol; the tag must name it
+        run: |
+          version=$(uv version --short --package pyvised)
+          for package in pyvised-backend pyvised-protocol; do
+            other=$(uv version --short --package "$package")
+            if [ "$other" != "$version" ]; then
+              echo "::error::$package is $other, pyvised is $version (use just set-version)"
+              exit 1
+            fi
+          done
+          # the tag may spell the version differently (v0.1.0-alpha for 0.1.0a0): compare them
+          # as Python versions, as the app reports its version in the normalized form
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            tagged=$(uv run --no-project --with packaging python -c \
+              "import sys; from packaging.version import Version; print(Version(sys.argv[1]))" \
+              "${GITHUB_REF_NAME#v}")
+            if [ "$tagged" != "$version" ]; then
+              echo "::error::the tag $GITHUB_REF_NAME ($tagged) does not match the version $version"
+              exit 1
+            fi
+          fi
+          # the app pulls <BACKEND_IMAGE_REPOSITORY>:<its version>
+          image=$(sed -n 's/^BACKEND_IMAGE_REPOSITORY = "\(.*\)"$/\1/p' app/src/pyvised/__init__.py)
+          case "$version" in *a*|*b*|*rc*|*dev*) prerelease=true ;; *) prerelease=false ;; esac
+          {
+            echo "version=$version"
+            echo "image=$image"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+          echo "PyVised $version, backend image $image:$version, pre-release: $prerelease" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+  backend:
+    name: Backend image
+    needs: version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      IMAGE: ${{ needs.version.outputs.image }}
+    steps:
+      - name: Free disk space (the official OpenMC image used for its nuclear data is 7 GB)
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - uses: actions/checkout@v7
+      - name: Tests in the container
+        run: |
+          docker build -f backend/Dockerfile --target test -t pyvised-backend:test .
+          docker run --rm pyvised-backend:test
+      - name: Runtime image and its self-test
+        run: |
+          docker build -f backend/Dockerfile --target runtime \
+            --build-arg VERSION="$VERSION" \
+            --label org.opencontainers.image.revision="$GITHUB_SHA" \
+            --label org.opencontainers.image.created="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --label org.opencontainers.image.url="https://github.com/$GITHUB_REPOSITORY" \
+            -t "$IMAGE:$VERSION" .
+          docker run --rm --entrypoint /usr/local/bin/_entrypoint.sh "$IMAGE:$VERSION" \
+            python -m pyvised_backend selftest
+      - name: Offline image file (GitHub release files must stay under 2 GiB)
+        run: |
+          file="pyvised-backend-$VERSION.tar.gz"
+          docker save "$IMAGE:$VERSION" | pigz -6 > "$file"
+          size=$(stat -c %s "$file")
+          echo "offline image file: $((size / 1048576)) MiB" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$size" -ge 2147483648 ]; then
+            echo "::error::$file is over 2 GiB"
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: backend-image
+          path: pyvised-backend-*.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  windows:
+    name: Windows app and installer
+    needs: version
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # only full version tags exist
+      - name: Install just
+        run: |
+          uv tool install rust-just
+          uv tool dir --bin | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+      - name: Environment
+        run: uv sync --all-packages
+      - name: Lint
+        run: just lint
+      - name: Types
+        run: just typecheck
+      - name: Tests
+        run: just test
+      - name: Exe and installer
+        run: just installer
+      - name: Silent install, self-test of the installed app, silent uninstall
+        run: ./installer/check-install.ps1
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installer
+          path: dist/PyVised-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish
+    needs: [version, backend, windows]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      IMAGE: ${{ needs.version.outputs.image }}
+      PRERELEASE: ${{ needs.version.outputs.prerelease }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: release
+          merge-multiple: true
+      - name: Push the backend image to ghcr.io
+        run: |
+          docker load -i "release/pyvised-backend-$VERSION.tar.gz"
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker push "$IMAGE:$VERSION"
+          if [ "$PRERELEASE" = false ]; then
+            docker tag "$IMAGE:$VERSION" "$IMAGE:latest"
+            docker push "$IMAGE:latest"
+          fi
+      - name: Draft the GitHub release
+        working-directory: release
+        run: |
+          sha256sum PyVised-Setup-*.exe pyvised-backend-*.tar.gz > SHA256SUMS.txt
+          cat > notes.md <<EOF
+          ## Install
+
+          1. Install [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/)
+             (free for education), start it once and accept its terms.
+          2. Run **PyVised-Setup-$VERSION.exe**. It installs for the current user; an administrator
+             can install it for all users.
+          3. At its first start PyVised downloads its OpenMC backend (\`$IMAGE:$VERSION\`,
+             about 1 GB) and runs a self-test.
+
+          Without internet access, download **pyvised-backend-$VERSION.tar.gz** too and choose
+          *Tools › Backend setup… › Load from file…* in PyVised.
+
+          Lab PCs (silent install, shared accounts):
+          [installer/LAB_DEPLOYMENT.md](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_REF_NAME/installer/LAB_DEPLOYMENT.md).
+
+          The installer is not code-signed: Windows SmartScreen may ask before it runs
+          (*More info › Run anyway*). The checksums are in SHA256SUMS.txt.
+          EOF
+          flags=(--draft --title "PyVised $VERSION" --notes-file notes.md --generate-notes)
+          if [ "$PRERELEASE" = true ]; then flags+=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" "${flags[@]}" \
+            PyVised-Setup-*.exe pyvised-backend-*.tar.gz SHA256SUMS.txt
+      - name: Can everyone download the image?
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            "https://ghcr.io/token?scope=repository:${IMAGE#ghcr.io/}:pull")
+          if [ "$code" = 200 ]; then
+            echo "$IMAGE is public" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::$IMAGE is not public: on GitHub open the package, Package settings > Change visibility > Public (once), or PyVised cannot download its backend"
+          fi
