@@ -18,6 +18,7 @@ from pyvised_protocol.schemas import (
     SelfTestStep,
 )
 from pyvised_protocol.slices import decode_slice, encode_slice
+from pyvised_protocol.tracks import TrackData, TrackSummary, decode_tracks, encode_tracks
 
 TOKEN = "test-token"
 AUTH = {"Authorization": f"Bearer {TOKEN}"}
@@ -73,18 +74,57 @@ class FakeRenderer:
         self.shut_down = True
 
 
+class FakeTracks:
+    def __init__(self):
+        self.requests = []
+        self.cancelled = 0
+
+    def generate(self, model_id, request):
+        if model_id != "abc":
+            raise ServiceError("unknown_model", model_id, status=404)
+        self.requests.append(request)
+        one = np.zeros(1)
+        data = TrackData(
+            position=np.zeros((1, 3)),
+            energy=one,
+            time=one,
+            weight=one,
+            cell=one,
+            instance=one,
+            material=one,
+            event=one,
+            step=one,
+            track_start=np.array([0, 1]),
+            track_history=np.zeros(1),
+            track_particle=np.array([2112]),
+            track_parent=np.array([-1]),
+            history_id=np.array([1]),
+            summary=TrackSummary(model_id=model_id, histories=1, seed=request.seed or 5),
+        )
+        return encode_tracks(data)
+
+    def cancel(self):
+        self.cancelled += 1
+
+
 @pytest.fixture
 def fakes(tmp_path: Path):
     return FakeModels(tmp_path), FakeRenderer()
 
 
 @pytest.fixture
-def client(tmp_path: Path, fakes) -> TestClient:
+def tracks() -> FakeTracks:
+    return FakeTracks()
+
+
+@pytest.fixture
+def client(tmp_path: Path, fakes, tracks) -> TestClient:
     config = Config(
         token=TOKEN, workspace=tmp_path, cross_sections=None, custom_data=tmp_path / "custom"
     )
     models, renderer = fakes
-    return TestClient(server.create_app(config, models=models, renderer=renderer))
+    app = server.create_app(config, models=models, renderer=renderer, tracks=tracks)
+    return TestClient(app)
 
 
 def test_health_needs_no_token(client: TestClient):
@@ -176,3 +216,24 @@ def test_inspect_asks_the_renderer(client: TestClient, fakes):
     assert renderer.inspected == [(1.5, -2.0, 0.0)]
     response = client.get(f"{API_PREFIX}/models/abc/inspect", headers=AUTH, params={"x": 1})
     assert response.status_code == 422
+
+
+def test_tracks_answer_with_a_frame(client: TestClient, tracks: FakeTracks):
+    body = {"histories": 20, "start": "point", "point": {"position": [1, 2, 3]}, "seed": 4}
+    response = client.post(f"{API_PREFIX}/models/abc/tracks", headers=AUTH, json=body)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == frames.CONTENT_TYPE
+    data = decode_tracks(response.content)
+    assert data.summary.model_id == "abc" and data.summary.seed == 4
+    assert tracks.requests[0].point.position == (1.0, 2.0, 3.0)
+    assert client.post(f"{API_PREFIX}/models/x/tracks", headers=AUTH, json={}).status_code == 404
+    response = client.post(f"{API_PREFIX}/models/abc/tracks", headers=AUTH, json={"histories": 0})
+    assert response.status_code == 422
+    assert client.post(f"{API_PREFIX}/models/abc/tracks", json={}).status_code == 401
+
+
+def test_tracks_cancel(client: TestClient, tracks: FakeTracks):
+    response = client.delete(f"{API_PREFIX}/models/abc/tracks", headers=AUTH)
+    assert response.status_code == 204 and tracks.cancelled == 1
+    health = client.get(f"{API_PREFIX}/health").json()
+    assert "tracks" in health["capabilities"]

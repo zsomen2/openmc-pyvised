@@ -31,6 +31,7 @@ from pyvised_protocol.schemas import (
     SelfTestStep,
     SliceRequest,
 )
+from pyvised_protocol.tracks import TrackRequest
 
 from . import __version__, libraries
 from .config import Config
@@ -40,6 +41,7 @@ from .models import ModelService, OpenedModel
 from .render import RenderPool
 from .runs import RunManager
 from .selftest import RESULT_MARKER
+from .tracks import TrackService
 
 CAPABILITIES = [
     "selftest",
@@ -50,6 +52,7 @@ CAPABILITIES = [
     "inspect",
     "runs",
     "events",
+    "tracks",
 ]
 SELFTEST_TIMEOUT = 600.0
 
@@ -114,12 +117,14 @@ def create_app(
     renderer: Renderer | None = None,
     runs: RunManager | None = None,
     hub: EventHub | None = None,
+    tracks: TrackService | None = None,
 ) -> FastAPI:
     config = config or Config.from_env()
     models = models or ModelService(config)
     renderer = renderer or RenderPool(config.render_workers, config.cache_dir / "logs")
     hub = hub or EventHub()
     runs = runs or RunManager(config, models, hub)
+    tracks = tracks or TrackService(config, models)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -127,6 +132,7 @@ def create_app(
         renderer.start()
         yield
         hub.close()
+        tracks.cancel()
         runs.shutdown()
         renderer.shutdown()
 
@@ -180,6 +186,19 @@ def create_app(
     def model_inspect(model_id: str, x: float, y: float, z: float) -> InspectResult:
         model = models.get(model_id)
         return renderer.inspect(model.directory, (x, y, z))
+
+    @private.post(
+        "/models/{model_id}/tracks",
+        response_class=Response,
+        responses={200: {"content": {frames.CONTENT_TYPE: {}}}},
+    )
+    def model_tracks(model_id: str, request: TrackRequest) -> Response:
+        return Response(content=tracks.generate(model_id, request), media_type=frames.CONTENT_TYPE)
+
+    @private.delete("/models/{model_id}/tracks", status_code=status.HTTP_204_NO_CONTENT)
+    def model_tracks_cancel(model_id: str) -> Response:
+        tracks.cancel()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     @private.get("/libraries")
     def library_list() -> list[LibraryInfo]:
