@@ -4,7 +4,9 @@ A run lives in its own folder next to the model,
 ``<model folder>/runs/<YYYYMMDD-HHMMSS>[_label]/``. The folder holds the
 patched copy of the exported model, OpenMC's output and PyVised's files:
 `RUN_FILE` (`RunInfo`), `RESULTS_FILE` (`RunResults`, once a statepoint
-exists) and `TALLIES_FILE` (the tally arrays). A run id is the folder's
+exists) and `TALLIES_FILE` (the tally arrays). `INPUT_FOLDER` keeps copies of
+the model's own code (its `.py`/`.ipynb` files) as they were when the run
+started; runs made before it have none. A run id is the folder's
 workspace-relative path in URL-safe base64, so the backend finds a run from
 its id alone, also after a restart.
 
@@ -27,6 +29,7 @@ RUN_FILE = "pyvised_run.json"
 RESULTS_FILE = "pyvised_results.json"
 TALLIES_FILE = "pyvised_tallies.npz"
 LOG_FILE = "openmc.log"
+INPUT_FOLDER = "input"
 
 RunState = Literal["preparing", "running", "summarising", "finished", "stopped", "failed"]
 FINAL_STATES: frozenset[str] = frozenset({"finished", "stopped", "failed"})
