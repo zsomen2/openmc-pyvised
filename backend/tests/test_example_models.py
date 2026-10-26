@@ -2,9 +2,11 @@
 
 The test image has the repository's examples/ at /src/examples. Each example opens with
 its default parameters and without warnings, shows no overlaps on slices through its
-bounding box, and runs a few particles with every tally scoring.
+bounding box, and runs a few particles with every tally scoring; the parameters of its run
+presets open and run too.
 """
 
+import json
 import os
 import shutil
 import time
@@ -27,6 +29,12 @@ from pyvised_protocol.slices import OVERLAP, decode_slice
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 FOLDERS = sorted(p for p in EXAMPLES.glob("task*_*") if p.is_dir()) if EXAMPLES.is_dir() else []
+PRESETS = [
+    (folder, preset["name"], preset["params"])
+    for folder in FOLDERS
+    for preset in json.loads((folder / "pyvised.json").read_text("utf-8")).get("run_presets", [])
+    if preset.get("params")
+]
 
 pytestmark = [
     pytest.mark.openmc,
@@ -117,3 +125,19 @@ def test_example_runs_and_every_tally_scores(folder: Path, config: Config):
     assert results.tallies
     for tally in results.tallies:
         assert tally.totals and all(t.value > 0 for t in tally.totals), tally.id
+
+
+@pytest.mark.parametrize(
+    ("folder", "params"),
+    [(folder, params) for folder, _, params in PRESETS],
+    ids=[f"{folder.name}-{name}" for folder, name, _ in PRESETS],
+)
+def test_example_preset_parameters_open_and_run(folder: Path, params: dict, config: Config):
+    request = OpenModelRequest(path=model_path(folder), params=params)
+    info = ModelService(config).open(request).info
+    assert not info.warnings, info.warnings
+    manager = RunManager(config, ModelService(config), Hub())  # type: ignore[arg-type]
+    settings = RunSettings(particles=2000, batches=4, inactive=2, seed=1)
+    run = manager.start(RunRequest(path=request.path, params=params, settings=settings))
+    final = wait(manager, run.id)
+    assert final.state == "finished" and final.stop_reason == "completed", final.error

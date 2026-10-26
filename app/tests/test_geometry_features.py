@@ -156,3 +156,27 @@ def test_export_png_and_npz(qtbot, tab: GeometryTab, tmp_path: Path):
         assert np.array_equal(saved["cells"], top.data.cells)
         meta = json.loads(str(saved["meta"]))
     assert meta["basis"] == "xy" and meta["model"] == "test/model.py"
+
+
+def test_a_long_description_scrolls_and_leaves_room_for_the_tree(qtbot):
+    from pyvised.ui.geometry.info_panel import DESCRIPTION_LINES, InfoPanel
+    from pyvised_protocol.sidecar import LocalizedText
+
+    panel = InfoPanel()
+    qtbot.addWidget(panel)
+    panel.resize(360, 700)
+    panel.show()
+    info = model_info()
+    assert info.sidecar is not None
+    info.sidecar.description = LocalizedText(en="One short line.")
+    panel.set_model(info, {})
+    area = panel.description
+    short = area.height()
+    assert area.isVisible() and 0 < short < area.fontMetrics().lineSpacing() * 3
+    info.sidecar.description = LocalizedText(en="\n".join(f"8.{n}. A sub-task." for n in range(20)))
+    panel.set_model(info, {})
+    assert area.height() == area.fontMetrics().lineSpacing() * DESCRIPTION_LINES
+    assert area.verticalScrollBar().maximum() > 0, "the rest scrolls"
+    info.sidecar.description = LocalizedText()
+    panel.set_model(info, {})
+    assert not area.isVisible()

@@ -9,11 +9,13 @@ top: the nesting path from the root universe down.
 """
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QIcon, QPalette, QPixmap
+from PySide6.QtGui import QColor, QIcon, QPalette, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
+    QFrame,
     QHeaderView,
     QLabel,
     QPushButton,
+    QScrollArea,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -36,6 +38,8 @@ _NODE = Qt.ItemDataRole.UserRole
 """Item data: ("universe" | "lattice", id) for geometry nodes that expand lazily."""
 _SELECT = Qt.ItemDataRole.UserRole + 1
 """Item data: ("material" | "cell" | "universe", id) of what selecting the item highlights."""
+DESCRIPTION_LINES = 8
+"""A longer description (a task text with sub-tasks) scrolls, so the tree keeps its room."""
 
 
 def swatch(rgb: RGB, size: int = 12) -> QIcon:
@@ -46,6 +50,41 @@ def swatch(rgb: RGB, size: int = 12) -> QIcon:
 
 def _number(value: float) -> str:
     return f"{value:.6g}"
+
+
+class DescriptionArea(QScrollArea):
+    """The model's description: as tall as its text, up to `DESCRIPTION_LINES`, then scrolling."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.label = QLabel()
+        self.label.setWordWrap(True)
+        self.label.setForegroundRole(QPalette.ColorRole.PlaceholderText)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.setWidget(self.label)
+        self.setWidgetResizable(True)
+        self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.viewport().setAutoFillBackground(False)
+        self.label.setAutoFillBackground(False)
+
+    def setText(self, text: str) -> None:
+        self.label.setText(text)
+        self._fit()
+
+    def text(self) -> str:
+        return self.label.text()
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._fit()
+
+    def _fit(self) -> None:
+        width = max(1, self.viewport().width())
+        cap = self.fontMetrics().lineSpacing() * DESCRIPTION_LINES
+        height = min(self.label.heightForWidth(width), cap)
+        if height != self.height():
+            self.setFixedHeight(max(height, 0))
 
 
 class InfoPanel(QWidget):
@@ -67,9 +106,7 @@ class InfoPanel(QWidget):
         font.setPointSizeF(font.pointSizeF() * 1.15)
         self.title.setFont(font)
         self.title.setWordWrap(True)
-        self.description = QLabel()
-        self.description.setWordWrap(True)
-        self.description.setForegroundRole(QPalette.ColorRole.PlaceholderText)
+        self.description = DescriptionArea()
         self.tree = QTreeWidget()
         self.tree.setColumnCount(2)
         self.tree.setHeaderHidden(True)
