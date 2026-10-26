@@ -3,12 +3,14 @@
 The tab owns what both views share: the colour mode and its tables, the
 universe level, the highlight, the labels and the colours saved in the
 model's sidecar. Each view shows the other view's cut plane as a line that can
-be dragged; a click inspects the point under the cursor.
+be dragged; a click inspects the point under the cursor. The particle tracks
+(`TrackOverlay`) are drawn on both views, with the geometry faded underneath.
 """
 
 import json
 import re
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
 
@@ -56,6 +58,8 @@ from ...render.views import SliceLayers
 from ..dialogs.text_dialog import TextDialog
 from ..empty_state import EmptyState
 from ..parameters_panel import ParametersPanel
+from ..tracks.overlay import TrackOverlay
+from ..tracks.player import TrackPlayer
 from .info_panel import InfoPanel
 from .legend import LegendEntry, LegendPanel, legend_pixmap
 from .view_panel import ViewPanel
@@ -64,6 +68,8 @@ MAX_VALUE_ENTRIES = 12
 """A continuous mode lists its values in the legend when there are at most this many."""
 LEGEND_DELAY_MS = 40
 COLOR_FIELDS = {"material": "material_colors", "cell": "cell_colors", "universe": "universe_colors"}
+TRACK_FADE = 0.6
+"""Share of the background mixed into the geometry under the particle tracks."""
 
 
 class ChangeBanner(QFrame):
@@ -119,6 +125,8 @@ class GeometryTab(QWidget):
         self.selection: tuple[str, int] | None = None
         """What is highlighted: ("material" | "cell" | "universe", id)."""
         self.render_style = Style()
+        self.inspected_point: tuple[float, float, float] | None = None
+        """The point inspected last (a click in a view)."""
         self.active_panel = 0
         self._announced = -1
         self._inspect_generation = -1
@@ -175,6 +183,10 @@ class GeometryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.stack)
 
+        self.player = TrackPlayer(self)
+        self.tracks = TrackOverlay(self.panels, self.player, self)
+        self.tracks.fade = settings.tracks_fade
+        self.tracks.changed.connect(self._restyle_panels)
         self._legend_timer = QTimer(self, singleShot=True, interval=LEGEND_DELAY_MS)
         self._legend_timer.timeout.connect(self._update_legend)
         for index, panel in enumerate(self.panels):
@@ -193,6 +205,12 @@ class GeometryTab(QWidget):
             panel.inspectRequested.connect(self.inspect)
             panel.exportRequested.connect(lambda kind, index=index: self.export_view(index, kind))
             panel.activated.connect(lambda index=index: self._set_active(index))
+            panel.hover_extra = lambda point, index=index: (
+                self.tracks.hover_text(index, point) if self.tracks.shown else ""
+            )
+            panel.menu_extra = lambda menu, point, index=index: self.tracks.add_menu_actions(
+                index, menu, point
+            )
         self.banner.reloadRequested.connect(self.reloadRequested)
         self.info_panel.outputRequested.connect(self._show_builder_output)
         self.info_panel.highlightRequested.connect(lambda s: self.set_highlight(s, "info"))
@@ -232,6 +250,7 @@ class GeometryTab(QWidget):
         self.legend.select(self.selection)
         self._sync_cut_lines()
         self._update_legend()
+        self.tracks.schedule()
 
     def show_files_changed(self) -> None:
         if self.info is not None:
@@ -291,7 +310,20 @@ class GeometryTab(QWidget):
         self._update_legend()
 
     def _style_panel(self, panel: ViewPanel) -> None:
-        panel.set_style(self.render_style, self.tables, self._highlight())
+        style = self.render_style
+        if self.tracks.shown and self.tracks.fade:
+            style = replace(style, fade=TRACK_FADE)
+        panel.set_style(style, self.tables, self._highlight())
+
+    def _restyle_panels(self) -> None:
+        """The tracks appeared, went or their fading changed."""
+        for panel in self.panels:
+            self._style_panel(panel)
+
+    def move_cuts(self, point: tuple[float, float, float]) -> None:
+        """Move both cut planes through `point`."""
+        for panel in self.panels:
+            panel.set_cut(point[panel.normal_axis])
 
     def _layers(self) -> SliceLayers:
         mode = self.color_mode
@@ -522,6 +554,7 @@ class GeometryTab(QWidget):
     def _inspected(self, result: InspectResult, generation: int) -> None:
         if generation != self.session.generation or generation != self._inspect_generation:
             return
+        self.inspected_point = result.point
         self.info_panel.show_point(result)
         for panel in self.panels:
             panel.mark_point(result.point)

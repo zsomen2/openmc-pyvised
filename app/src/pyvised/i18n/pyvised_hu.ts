@@ -32,19 +32,72 @@
 <context>
     <name>ChangeBanner</name>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="77"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="83"/>
         <source>The model files changed on disk.</source>
         <translation>A modell fájljai megváltoztak a lemezen.</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="78"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="84"/>
         <source>Reload</source>
         <translation>Újratöltés</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="79"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="85"/>
         <source>Dismiss</source>
         <translation>Bezárás</translation>
+    </message>
+</context>
+<context>
+    <name>EventTable</name>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="188"/>
+        <source>Step</source>
+        <translation>Lépés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="189"/>
+        <source>Track</source>
+        <translation>Pálya</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="190"/>
+        <source>Particle</source>
+        <translation>Részecske</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="191"/>
+        <source>Event</source>
+        <translation>Esemény</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="192"/>
+        <source>Energy</source>
+        <translation>Energia</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="193"/>
+        <source>Time</source>
+        <translation>Idő</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="194"/>
+        <source>Weight</source>
+        <translation>Súly</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="195"/>
+        <source>Cell</source>
+        <translation>Cella</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="196"/>
+        <source>Material</source>
+        <translation>Anyag</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="250"/>
+        <source>void</source>
+        <translation>üres</translation>
     </message>
 </context>
 <context>
@@ -149,151 +202,151 @@
 <context>
     <name>GeometryTab</name>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="128"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="136"/>
         <source>No model open</source>
         <translation>Nincs megnyitott modell</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="130"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="138"/>
         <source>Open a Python model builder, a Jupyter notebook or OpenMC XML from the workspace (File › Open model…).</source>
         <translation>Nyisson meg egy Python modellépítő szkriptet, egy Jupyter-notebookot vagy OpenMC XML-t a munkaterületről (Fájl › Modell megnyitása…).</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="148"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="156"/>
         <source>Builder parameters</source>
         <translation>A modellépítő paraméterei</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="364"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="396"/>
         <source>Colour of material {id}</source>
         <translation>Szín: anyag {id}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="365"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="397"/>
         <source>Colour of cell {id}</source>
         <translation>Szín: cella {id}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="366"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="398"/>
         <source>Colour of universe {id}</source>
         <translation>Szín: univerzum {id}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="391"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="423"/>
         <source>Colours</source>
         <translation>Színek</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="393"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="425"/>
         <source>The colour could not be saved in the model&apos;s pyvised.json.
 {error}</source>
         <translation>A színt nem sikerült a modell pyvised.json fájljába menteni.
 {error}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="402"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="434"/>
         <source>Colour saved in pyvised.json.</source>
         <translation>A szín mentve a pyvised.json fájlba.</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="409"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="441"/>
         <source>Universes at level {level}</source>
         <translation>Univerzumok ({level}. szint)</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="411"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="443"/>
         <source>Materials</source>
         <translation>Anyagok</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="412"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="444"/>
         <source>Cells</source>
         <translation>Cellák</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="413"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="445"/>
         <source>Universes (deepest level)</source>
         <translation>Univerzumok (legmélyebb szint)</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="414"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="446"/>
         <source>Density [g/cm³]</source>
         <translation>Sűrűség [g/cm³]</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="415"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="447"/>
         <source>Temperature [K]</source>
         <translation>Hőmérséklet [K]</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="417"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="449"/>
         <source>Importance ({bound} / weight-window lower bound)</source>
         <translation>Importance ({bound} / a súlyablak alsó korlátja)</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="419"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="451"/>
         <source>Lines only</source>
         <translation>Csak vonalak</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="432"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="464"/>
         <source>universe {id}</source>
         <translation>univerzum {id}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="531"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="564"/>
         <source>Inspect failed: {error}</source>
         <translation>A pont vizsgálata sikertelen: {error}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="547"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="580"/>
         <source>Export slice data</source>
         <translation>Metszetadatok exportálása</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="549"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="582"/>
         <source>Slice data (*.npz)</source>
         <translation>Metszetadatok (*.npz)</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="554"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="587"/>
         <source>PNG image with axes and legend (*.png)</source>
         <translation>PNG-kép tengelyekkel és jelmagyarázattal (*.png)</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="555"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="588"/>
         <source>PNG image of the slice only (*.png)</source>
         <translation>PNG-kép, csak a metszet (*.png)</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="558"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="591"/>
         <source>Export image</source>
         <translation>Kép exportálása</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="569"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="602"/>
         <source>Export</source>
         <translation>Exportálás</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="571"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="604"/>
         <source>Saved {path}</source>
         <translation>Mentve: {path}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="575"/>
-        <location filename="../ui/geometry/geometry_tab.py" line="612"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="608"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="645"/>
         <source>The view shows no slice yet.</source>
         <translation>A nézetben még nincs metszet.</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="581"/>
-        <location filename="../ui/geometry/geometry_tab.py" line="607"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="614"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="640"/>
         <source>Could not write {path}</source>
         <translation>Nem sikerült írni: {path}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/geometry_tab.py" line="649"/>
+        <location filename="../ui/geometry/geometry_tab.py" line="682"/>
         <source>Builder output</source>
         <translation>A modellépítő kimenete</translation>
     </message>
@@ -906,391 +959,401 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="90"/>
+        <location filename="../ui/main_window.py" line="94"/>
         <source>Geometry</source>
         <translation>Geometria</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="91"/>
-        <location filename="../ui/main_window.py" line="385"/>
+        <location filename="../ui/main_window.py" line="95"/>
+        <location filename="../ui/main_window.py" line="400"/>
         <source>Simulation</source>
         <translation>Szimuláció</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="145"/>
+        <location filename="../ui/main_window.py" line="149"/>
         <source>&amp;Open model…</source>
         <translation>Modell &amp;megnyitása…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="147"/>
+        <location filename="../ui/main_window.py" line="151"/>
         <source>&amp;Reload model</source>
         <translation>Modell ú&amp;jratöltése</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="149"/>
+        <location filename="../ui/main_window.py" line="153"/>
         <source>Switch &amp;workspace…</source>
         <translation>&amp;Munkaterület váltása…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="152"/>
+        <location filename="../ui/main_window.py" line="156"/>
         <source>Open workspace &amp;folder</source>
         <translation>Munkaterület &amp;mappájának megnyitása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="155"/>
+        <location filename="../ui/main_window.py" line="159"/>
         <source>&amp;Export image…</source>
         <translation>Kép &amp;exportálása…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="160"/>
+        <location filename="../ui/main_window.py" line="164"/>
         <source>Export slice &amp;data (.npz)…</source>
         <translation>Metszet&amp;adatok exportálása (.npz)…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="163"/>
+        <location filename="../ui/main_window.py" line="167"/>
         <source>E&amp;xit</source>
         <translation>&amp;Kilépés</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="164"/>
+        <location filename="../ui/main_window.py" line="168"/>
         <source>Boundary &amp;lines</source>
         <translation>&amp;Határvonalak</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="168"/>
+        <location filename="../ui/main_window.py" line="172"/>
         <source>Re&amp;set views</source>
         <translation>Nézetek &amp;visszaállítása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="170"/>
+        <location filename="../ui/main_window.py" line="174"/>
+        <source>Particle &amp;tracks…</source>
+        <translation>Részecske&amp;pályák…</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="175"/>
+        <source>Generate particle tracks and play them on the views</source>
+        <translation>Részecskepályák előállítása és lejátszása a nézeteken</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="176"/>
         <source>Run backend &amp;self-test</source>
         <translation>Háttérszolgáltatás &amp;önellenőrzése</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="171"/>
+        <location filename="../ui/main_window.py" line="177"/>
         <source>Backend &amp;log…</source>
         <translation>Háttérszolgáltatás &amp;naplója…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="172"/>
+        <location filename="../ui/main_window.py" line="178"/>
         <source>Copy &amp;diagnostics</source>
         <translation>&amp;Diagnosztika másolása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="173"/>
+        <location filename="../ui/main_window.py" line="179"/>
         <source>&amp;Restart backend</source>
         <translation>Háttérszolgáltatás új&amp;raindítása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="175"/>
+        <location filename="../ui/main_window.py" line="181"/>
         <source>Nuclear-data &amp;libraries…</source>
         <translation>Magadat-&amp;könyvtárak…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="178"/>
+        <location filename="../ui/main_window.py" line="184"/>
         <source>&amp;Preferences…</source>
         <translation>&amp;Programbeállítások…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="181"/>
+        <location filename="../ui/main_window.py" line="187"/>
         <source>OpenMC &amp;documentation</source>
         <translation>OpenMC-&amp;dokumentáció</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="185"/>
+        <location filename="../ui/main_window.py" line="191"/>
         <source>PyVised on &amp;GitHub</source>
         <translation>A PyVised a &amp;GitHubon</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="187"/>
+        <location filename="../ui/main_window.py" line="193"/>
         <source>&amp;About PyVised</source>
         <translation>A PyVised &amp;névjegye</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="191"/>
+        <location filename="../ui/main_window.py" line="197"/>
         <source>&amp;File</source>
         <translation>&amp;Fájl</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="193"/>
+        <location filename="../ui/main_window.py" line="199"/>
         <source>Open &amp;recent</source>
         <translation>&amp;Legutóbbi modellek</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="205"/>
+        <location filename="../ui/main_window.py" line="211"/>
         <source>&amp;View</source>
         <translation>&amp;Nézet</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="206"/>
+        <location filename="../ui/main_window.py" line="212"/>
         <source>&amp;Colour by</source>
         <translation>&amp;Színezés</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="214"/>
+        <location filename="../ui/main_window.py" line="220"/>
         <source>&amp;Labels</source>
         <translation>&amp;Feliratok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="226"/>
+        <location filename="../ui/main_window.py" line="232"/>
         <source>&amp;Tools</source>
         <translation>&amp;Eszközök</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="233"/>
+        <location filename="../ui/main_window.py" line="241"/>
         <source>&amp;Settings</source>
         <translation>&amp;Beállítások</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="235"/>
+        <location filename="../ui/main_window.py" line="243"/>
         <source>&amp;Help</source>
         <translation>&amp;Súgó</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="243"/>
+        <location filename="../ui/main_window.py" line="251"/>
         <source>Material</source>
         <translation>Anyag</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="244"/>
+        <location filename="../ui/main_window.py" line="252"/>
         <source>Cell</source>
         <translation>Cella</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="245"/>
+        <location filename="../ui/main_window.py" line="253"/>
         <source>Universe</source>
         <translation>Univerzum</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="246"/>
+        <location filename="../ui/main_window.py" line="254"/>
         <source>Density</source>
         <translation>Sűrűség</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="247"/>
+        <location filename="../ui/main_window.py" line="255"/>
         <source>Temperature</source>
         <translation>Hőmérséklet</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="248"/>
+        <location filename="../ui/main_window.py" line="256"/>
         <source>Importance (weight windows)</source>
         <translation>Importance (súlyablakok)</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="249"/>
+        <location filename="../ui/main_window.py" line="257"/>
         <source>None (lines only)</source>
         <translation>Nincs (csak vonalak)</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="254"/>
+        <location filename="../ui/main_window.py" line="262"/>
         <source>No labels</source>
         <translation>Nincsenek feliratok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="255"/>
+        <location filename="../ui/main_window.py" line="263"/>
         <source>Cell numbers</source>
         <translation>Cellaszámok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="256"/>
+        <location filename="../ui/main_window.py" line="264"/>
         <source>Material numbers</source>
         <translation>Anyagszámok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="257"/>
+        <location filename="../ui/main_window.py" line="265"/>
         <source>Universe numbers</source>
         <translation>Univerzumszámok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="261"/>
+        <location filename="../ui/main_window.py" line="269"/>
         <source>Main toolbar</source>
         <translation>Fő eszköztár</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="268"/>
+        <location filename="../ui/main_window.py" line="276"/>
         <source>Colour by:</source>
         <translation>Színezés:</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="276"/>
+        <location filename="../ui/main_window.py" line="284"/>
         <source>Level:</source>
         <translation>Szint:</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="279"/>
+        <location filename="../ui/main_window.py" line="287"/>
         <source>Colour by the universes at this level (0: the root universe&apos;s cells)</source>
         <translation>Színezés az ezen a szinten lévő univerzumok szerint (0: a gyökéruniverzum cellái)</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="285"/>
+        <location filename="../ui/main_window.py" line="293"/>
         <source>Particle and energy group of the weight windows</source>
         <translation>A súlyablakok részecskéje és energiacsoportja</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="290"/>
+        <location filename="../ui/main_window.py" line="298"/>
         <source>Labels</source>
         <translation>Feliratok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="291"/>
+        <location filename="../ui/main_window.py" line="299"/>
         <source>Numbers on the regions</source>
         <translation>Számok a tartományokon</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="359"/>
+        <location filename="../ui/main_window.py" line="374"/>
         <source>A simulation is running. It keeps running in the backend, and PyVised shows it again at the next start.</source>
         <translation>Egy szimuláció fut. A háttérszolgáltatásban tovább fut, és a PyVised a következő indításkor ismét megjeleníti.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="364"/>
+        <location filename="../ui/main_window.py" line="379"/>
         <source>A simulation is running. It stops now and keeps the results of its latest statepoint.</source>
         <translation>Egy szimuláció fut. Most leáll, és megmaradnak a legutóbbi állapotfájljának eredményei.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="367"/>
+        <location filename="../ui/main_window.py" line="382"/>
         <source>Exit</source>
         <translation>Kilépés</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="367"/>
+        <location filename="../ui/main_window.py" line="382"/>
         <source>Restart backend</source>
         <translation>Háttérszolgáltatás újraindítása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="379"/>
+        <location filename="../ui/main_window.py" line="394"/>
         <source>Stopping the simulation and saving its results…</source>
         <translation>A szimuláció leállítása és az eredményeinek mentése…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="380"/>
+        <location filename="../ui/main_window.py" line="395"/>
         <source>Do not wait</source>
         <translation>Ne várjon</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="427"/>
-        <location filename="../ui/main_window.py" line="566"/>
+        <location filename="../ui/main_window.py" line="445"/>
+        <location filename="../ui/main_window.py" line="609"/>
         <source>Open model</source>
         <translation>Modell megnyitása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="429"/>
+        <location filename="../ui/main_window.py" line="447"/>
         <source>OpenMC models ({patterns});;All files (*)</source>
         <translation>OpenMC-modellek ({patterns});;Minden fájl (*)</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="477"/>
+        <location filename="../ui/main_window.py" line="495"/>
         <source>Deepest</source>
         <translation>Legmélyebb</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="494"/>
+        <location filename="../ui/main_window.py" line="512"/>
         <source>{particle}, {low} – {high} eV</source>
         <translation>{particle}, {low} – {high} eV</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="526"/>
+        <location filename="../ui/main_window.py" line="567"/>
         <source>Clear the list</source>
         <translation>A lista törlése</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="529"/>
+        <location filename="../ui/main_window.py" line="570"/>
         <source>No recent models</source>
         <translation>Nincsenek legutóbbi modellek</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="532"/>
+        <location filename="../ui/main_window.py" line="573"/>
         <source>Opening {name}…</source>
         <translation>{name} megnyitása…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="555"/>
+        <location filename="../ui/main_window.py" line="598"/>
         <source>The model has warnings; see the Model section.</source>
         <translation>A modellhez figyelmeztetések tartoznak; lásd a Modell részt.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="619"/>
+        <location filename="../ui/main_window.py" line="664"/>
         <source>Image: {image}</source>
         <translation>Konténerkép: {image}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="620"/>
+        <location filename="../ui/main_window.py" line="665"/>
         <source>Container: {name}</source>
         <translation>Konténer: {name}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="621"/>
+        <location filename="../ui/main_window.py" line="666"/>
         <source>Workspace: {path}</source>
         <translation>Munkaterület: {path}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="624"/>
+        <location filename="../ui/main_window.py" line="669"/>
         <source>Address: {url}</source>
         <translation>Cím: {url}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="625"/>
+        <location filename="../ui/main_window.py" line="670"/>
         <source>OpenMC backend</source>
         <translation>OpenMC háttérszolgáltatás</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="631"/>
-        <location filename="../ui/main_window.py" line="651"/>
-        <location filename="../ui/main_window.py" line="664"/>
+        <location filename="../ui/main_window.py" line="676"/>
+        <location filename="../ui/main_window.py" line="696"/>
+        <location filename="../ui/main_window.py" line="709"/>
         <source>Self-test</source>
         <translation>Önellenőrzés</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="631"/>
+        <location filename="../ui/main_window.py" line="676"/>
         <source>The backend is not ready yet.</source>
         <translation>A háttérszolgáltatás még nem áll készen.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="640"/>
+        <location filename="../ui/main_window.py" line="685"/>
         <source>Running the backend self-test…</source>
         <translation>A háttérszolgáltatás önellenőrzése fut…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="654"/>
+        <location filename="../ui/main_window.py" line="699"/>
         <source>The backend works: it built, rendered and ran a test model.</source>
         <translation>A háttérszolgáltatás működik: felépített, kirajzolt és lefuttatott egy tesztmodellt.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="657"/>
+        <location filename="../ui/main_window.py" line="702"/>
         <source>The backend self-test failed.</source>
         <translation>A háttérszolgáltatás önellenőrzése sikertelen.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="674"/>
+        <location filename="../ui/main_window.py" line="719"/>
         <source>Backend log</source>
         <translation>A háttérszolgáltatás naplója</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="674"/>
+        <location filename="../ui/main_window.py" line="719"/>
         <source>Loading…</source>
         <translation>Betöltés…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="679"/>
+        <location filename="../ui/main_window.py" line="724"/>
         <source>Collecting diagnostics…</source>
         <translation>Diagnosztikai adatok gyűjtése…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="709"/>
+        <location filename="../ui/main_window.py" line="754"/>
         <source>Diagnostics copied to the clipboard.</source>
         <translation>A diagnosztikai adatok a vágólapra kerültek.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="715"/>
+        <location filename="../ui/main_window.py" line="760"/>
         <source>Choose the workspace folder</source>
         <translation>Válassza ki a munkaterület mappáját</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="738"/>
+        <location filename="../ui/main_window.py" line="783"/>
         <source>Language</source>
         <translation>Nyelv</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="738"/>
+        <location filename="../ui/main_window.py" line="783"/>
         <source>Restart PyVised to switch the language.</source>
         <translation>A nyelv váltásához indítsa újra a PyVisedet.</translation>
     </message>
@@ -2703,123 +2766,693 @@
     </message>
 </context>
 <context>
+    <name>TrackNames</name>
+    <message>
+        <location filename="../ui/tracks/names.py" line="11"/>
+        <source>source</source>
+        <translation>forrás</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="12"/>
+        <source>secondary particle</source>
+        <translation>másodlagos részecske</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="13"/>
+        <source>split copy</source>
+        <translation>hasított másolat</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="14"/>
+        <source>surface crossing</source>
+        <translation>felületátlépés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="15"/>
+        <source>collision</source>
+        <translation>ütközés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="16"/>
+        <source>reflection</source>
+        <translation>visszaverődés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="17"/>
+        <source>periodic boundary</source>
+        <translation>periodikus határ</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="18"/>
+        <source>leaked</source>
+        <translation>kiszökött</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="19"/>
+        <source>absorbed</source>
+        <translation>elnyelődött</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="20"/>
+        <source>killed (roulette or cutoff)</source>
+        <translation>megszűnt (orosz rulett vagy levágás)</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="27"/>
+        <source>neutron</source>
+        <translation>neutron</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="28"/>
+        <source>photon</source>
+        <translation>foton</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="29"/>
+        <source>electron</source>
+        <translation>elektron</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/names.py" line="30"/>
+        <source>positron</source>
+        <translation>pozitron</translation>
+    </message>
+</context>
+<context>
+    <name>TrackOverlay</name>
+    <message>
+        <location filename="../ui/tracks/overlay.py" line="181"/>
+        <source>history {number}</source>
+        <translation>{number}. történet</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/overlay.py" line="183"/>
+        <source>{event} (step {step})</source>
+        <translation>{event} ({step}. lépés)</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/overlay.py" line="188"/>
+        <source>weight {weight:.3g}</source>
+        <translation>súly {weight:.3g}</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/overlay.py" line="189"/>
+        <source>cell {id}</source>
+        <translation>cella {id}</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/overlay.py" line="193"/>
+        <source>void</source>
+        <translation>üres</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/overlay.py" line="193"/>
+        <source>material {id}</source>
+        <translation>anyag {id}</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/overlay.py" line="207"/>
+        <source>Follow history {number}</source>
+        <translation>A(z) {number}. történet követése</translation>
+    </message>
+</context>
+<context>
+    <name>TrackSession</name>
+    <message>
+        <location filename="../core/track_session.py" line="93"/>
+        <source>OpenMC could not track the particles.</source>
+        <translation>Az OpenMC nem tudta követni a részecskéket.</translation>
+    </message>
+    <message>
+        <location filename="../core/track_session.py" line="94"/>
+        <source>Tracking the particles took too long.</source>
+        <translation>A részecskék követése túl sokáig tartott.</translation>
+    </message>
+    <message>
+        <location filename="../core/track_session.py" line="95"/>
+        <source>The tracks cannot start there.</source>
+        <translation>A pályák nem indulhatnak onnan.</translation>
+    </message>
+    <message>
+        <location filename="../core/track_session.py" line="96"/>
+        <source>The backend has forgotten the model; reload it.</source>
+        <translation>A háttérszolgáltatás már nem ismeri a modellt; töltse újra.</translation>
+    </message>
+    <message>
+        <location filename="../core/track_session.py" line="98"/>
+        <source>The tracks could not be generated.</source>
+        <translation>A pályákat nem sikerült előállítani.</translation>
+    </message>
+</context>
+<context>
+    <name>TracksWindow</name>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="274"/>
+        <location filename="../ui/tracks/tracks_window.py" line="640"/>
+        <location filename="../ui/tracks/tracks_window.py" line="727"/>
+        <location filename="../ui/tracks/tracks_window.py" line="769"/>
+        <source>Particle tracks</source>
+        <translation>Részecskepályák</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="285"/>
+        <source>The model&apos;s source</source>
+        <translation>A modell forrása</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="287"/>
+        <source>The fission source (after {batches} batches)</source>
+        <translation>A hasadási forrás ({batches} köteg után)</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="290"/>
+        <source>A point source</source>
+        <translation>Pontforrás</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="293"/>
+        <source>The model&apos;s source is where an eigenvalue run starts (its first generation). The fission source is where fissions happen once the source has settled.</source>
+        <translation>A sajátérték-számítás a modell forrásából indul (első generáció). A hasadási forrás ott van, ahol a forrás beállása után a hasadások történnek.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="301"/>
+        <source>Energy of the source particles [eV]</source>
+        <translation>A forrásrészecskék energiája [eV]</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="309"/>
+        <source>Use the inspected point</source>
+        <translation>A vizsgált pont használata</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="310"/>
+        <location filename="../ui/tracks/tracks_window.py" line="667"/>
+        <source>Click a point in a geometry view first.</source>
+        <translation>Előbb kattintson egy pontra valamelyik geometriai nézetben.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="327"/>
+        <source>random</source>
+        <translation>véletlen</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="328"/>
+        <source>The same seed gives the same tracks.</source>
+        <translation>Ugyanaz a kezdőérték ugyanazokat a pályákat adja.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="329"/>
+        <source>Weight windows (splitting and roulette)</source>
+        <translation>Súlyablakok (hasítás és orosz rulett)</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="331"/>
+        <source>Photon transport</source>
+        <translation>Fotontranszport</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="332"/>
+        <location filename="../ui/tracks/tracks_window.py" line="342"/>
+        <source>Generate</source>
+        <translation>Előállítás</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="335"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="344"/>
+        <location filename="../ui/tracks/tracks_window.py" line="443"/>
+        <source>Histories:</source>
+        <translation>Történetek:</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="345"/>
+        <source>Start from:</source>
+        <translation>Indulás:</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="347"/>
+        <source>Seed:</source>
+        <translation>Kezdőérték (seed):</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="358"/>
+        <source>Show on the geometry views</source>
+        <translation>Megjelenítés a geometriai nézeteken</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="360"/>
+        <source>Fade the geometry</source>
+        <translation>A geometria halványítása</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="363"/>
+        <source>Particles only</source>
+        <translation>Csak a részecskék</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="364"/>
+        <source>Particles and track lines</source>
+        <translation>Részecskék és pályavonalak</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="370"/>
+        <source>Colour of the particles</source>
+        <translation>A részecskék színe</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="376"/>
+        <source>Colour of the track lines</source>
+        <translation>A pályavonalak színe</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="382"/>
+        <source>births</source>
+        <translation>keletkezés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="383"/>
+        <source>collisions</source>
+        <translation>ütközések</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="384"/>
+        <source>surface crossings</source>
+        <translation>felületátlépések</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="385"/>
+        <source>ends</source>
+        <translation>végpontok</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="390"/>
+        <source>Only near the cut plane, ±</source>
+        <translation>Csak a metszősík közelében, ±</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="392"/>
+        <source>Each view shows only what lies this close to its cut plane.</source>
+        <translation>Minden nézet csak azt mutatja, ami ennyire közel van a saját metszősíkjához.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="405"/>
+        <source>Draw:</source>
+        <translation>Rajzolás:</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="407"/>
+        <location filename="../ui/tracks/tracks_window.py" line="444"/>
+        <source>Particles:</source>
+        <translation>Részecskék:</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="409"/>
+        <source>Track lines:</source>
+        <translation>Pályavonalak:</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="415"/>
+        <source>Markers:</source>
+        <translation>Jelölők:</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="435"/>
+        <source>any</source>
+        <translation>bármely</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="450"/>
+        <source>Energy:</source>
+        <translation>Energia:</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="453"/>
+        <source>Display</source>
+        <translation>Megjelenítés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="454"/>
+        <source>Filter</source>
+        <translation>Szűrés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="457"/>
+        <source>Event steps</source>
+        <translation>Eseménylépések</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="458"/>
+        <source>All histories advance one event per step.</source>
+        <translation>Minden történet lépésenként egy eseménnyel halad tovább.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="459"/>
+        <source>Time of flight</source>
+        <translation>Repülési idő</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="461"/>
+        <source>Real time since the start of each history, on a log scale.</source>
+        <translation>Az egyes történetek kezdete óta eltelt valós idő, logaritmikus skálán.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="473"/>
+        <source>To the start</source>
+        <translation>Az elejére</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="474"/>
+        <source>One step back</source>
+        <translation>Egy lépés vissza</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="475"/>
+        <source>Play or pause</source>
+        <translation>Lejátszás vagy szünet</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="476"/>
+        <source>One step forward</source>
+        <translation>Egy lépés előre</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="478"/>
+        <source>To the end: everything</source>
+        <translation>A végére: minden</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="481"/>
+        <source>Playback speed</source>
+        <translation>Lejátszási sebesség</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="482"/>
+        <source>Loop</source>
+        <translation>Ismétlés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="483"/>
+        <source>Playback</source>
+        <translation>Lejátszás</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="509"/>
+        <source>Follow history</source>
+        <translation>Történet követése</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="520"/>
+        <source>Click: go to this event. Double-click: move the cut planes through it.</source>
+        <translation>Kattintás: ugrás erre az eseményre. Dupla kattintás: a metszősíkok áthelyezése ezen a ponton át.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="530"/>
+        <source>History</source>
+        <translation>Történet</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="576"/>
+        <location filename="../ui/tracks/tracks_window.py" line="712"/>
+        <source>No tracks yet: choose the histories and press Generate.</source>
+        <translation>Még nincsenek pályák: adja meg a történetek számát, és nyomja meg az Előállítás gombot.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="583"/>
+        <source>by energy</source>
+        <translation>energia szerint</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="584"/>
+        <source>by particle type</source>
+        <translation>részecsketípus szerint</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="586"/>
+        <source>by event</source>
+        <translation>esemény szerint</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="587"/>
+        <source>by history</source>
+        <translation>történet szerint</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="588"/>
+        <source>one colour</source>
+        <translation>egy szín</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="635"/>
+        <source>The model changed: generate the tracks again.</source>
+        <translation>A modell megváltozott: állítsa elő újra a pályákat.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="637"/>
+        <source>No model is open.</source>
+        <translation>Nincs megnyitott modell.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="643"/>
+        <source>Particle tracks — {model}</source>
+        <translation>Részecskepályák — {model}</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="653"/>
+        <source>The model uses no weight windows.</source>
+        <translation>A modell nem használ súlyablakokat.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="699"/>
+        <source>The OpenMC backend is not ready yet.</source>
+        <translation>Az OpenMC háttérszolgáltatás még nem áll készen.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="717"/>
+        <source>Tracking {count} histories… {seconds:.0f} s</source>
+        <translation>{count} történet követése… {seconds:.0f} s</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="763"/>
+        <source>Histories</source>
+        <translation>Történetek</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="764"/>
+        <source>{n} (seed {seed}, {seconds:.1f} s)</source>
+        <translation>{n} (kezdőérték {seed}, {seconds:.1f} s)</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="770"/>
+        <source>{n} (split copies {split}, secondary particles {secondary})</source>
+        <translation>{n} (hasított másolatok {split}, másodlagos részecskék {secondary})</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="775"/>
+        <source>Events</source>
+        <translation>Események</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="777"/>
+        <source>collisions {n} · surface crossings {crossings} · reflections {reflections}</source>
+        <translation>ütközések {n} · felületátlépések {crossings} · visszaverődések {reflections}</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="785"/>
+        <source>Ends</source>
+        <translation>Végpontok</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="786"/>
+        <source>absorbed {absorbed} · leaked {leaked} · killed {killed}</source>
+        <translation>elnyelődött {absorbed} · kiszökött {leaked} · megszűnt {killed}</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="799"/>
+        <source>Eigenvalue model: an absorption may be a fission, whose neutrons start the next generation. Killed: roulette or the energy cutoff after a collision.</source>
+        <translation>Sajátérték-modell: az elnyelődés hasadás is lehet, amelynek neutronjai a következő generációt indítják. Megszűnt: ütközés utáni orosz rulett vagy energialevágás.</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="805"/>
+        <source>{n} more histories were left out (at most {states} states).</source>
+        <translation>További {n} történet kimaradt (legfeljebb {states} állapot).</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="809"/>
+        <source>OpenMC: {warning}</source>
+        <translation>OpenMC: {warning}</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="870"/>
+        <source>birth</source>
+        <translation>keletkezés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="871"/>
+        <source>collision</source>
+        <translation>ütközés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="872"/>
+        <source>crossing</source>
+        <translation>felületátlépés</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="873"/>
+        <source>absorbed</source>
+        <translation>elnyelődött</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="874"/>
+        <source>leaked</source>
+        <translation>kiszökött</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="875"/>
+        <source>killed</source>
+        <translation>megszűnt</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="947"/>
+        <source>{n:g} steps/s</source>
+        <translation>{n:g} lépés/s</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="949"/>
+        <source>{n:g} decades/s</source>
+        <translation>{n:g} dekád/s</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="975"/>
+        <source>all</source>
+        <translation>minden</translation>
+    </message>
+    <message>
+        <location filename="../ui/tracks/tracks_window.py" line="978"/>
+        <source>step {step:.1f} / {last}</source>
+        <translation>{step:.1f}. lépés / {last}</translation>
+    </message>
+</context>
+<context>
     <name>ViewPanel</name>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="107"/>
+        <location filename="../ui/geometry/view_panel.py" line="112"/>
         <source>Top (XY)</source>
         <translation>Felülnézet (XY)</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="108"/>
+        <location filename="../ui/geometry/view_panel.py" line="113"/>
         <source>Front (XZ)</source>
         <translation>Elölnézet (XZ)</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="109"/>
+        <location filename="../ui/geometry/view_panel.py" line="114"/>
         <source>Side (YZ)</source>
         <translation>Oldalnézet (YZ)</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="413"/>
+        <location filename="../ui/geometry/view_panel.py" line="418"/>
         <source>The slice could not be rendered.
 {error}</source>
         <translation>A metszetet nem sikerült kirajzolni.
 {error}</translation>
     </message>
     <message numerus="yes">
-        <location filename="../ui/geometry/view_panel.py" line="436"/>
+        <location filename="../ui/geometry/view_panel.py" line="441"/>
         <source>%n overlap pixel(s)</source>
         <translation>
             <numerusform>%n átfedő képpont</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="439"/>
+        <location filename="../ui/geometry/view_panel.py" line="444"/>
         <source>No overlaps</source>
         <translation>Nincs átfedés</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="444"/>
+        <location filename="../ui/geometry/view_panel.py" line="449"/>
         <source>Overlapping cells are drawn magenta. Outside the geometry: {share:.1f} % of the view.</source>
         <translation>Az átfedő cellák bíbor színűek. A geometrián kívül: a nézet {share:.1f} %-a.</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="491"/>
+        <location filename="../ui/geometry/view_panel.py" line="499"/>
         <source>outside the geometry</source>
         <translation>a geometrián kívül</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="493"/>
+        <location filename="../ui/geometry/view_panel.py" line="501"/>
         <source>overlap of {count} cells</source>
         <translation>{count} cella átfedése</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="496"/>
+        <location filename="../ui/geometry/view_panel.py" line="504"/>
         <source>cell {id}</source>
         <translation>cella {id}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="497"/>
+        <location filename="../ui/geometry/view_panel.py" line="505"/>
         <source>instance {number}</source>
         <translation>példány {number}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="500"/>
+        <location filename="../ui/geometry/view_panel.py" line="508"/>
         <source>void</source>
         <translation>üres</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="504"/>
+        <location filename="../ui/geometry/view_panel.py" line="512"/>
         <source>material {id}</source>
         <translation>anyag {id}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="506"/>
+        <location filename="../ui/geometry/view_panel.py" line="514"/>
         <source>universe {id}</source>
         <translation>univerzum {id}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="512"/>
+        <location filename="../ui/geometry/view_panel.py" line="520"/>
         <source>level {level}: cell {cell} in universe {universe}</source>
         <translation>{level}. szint: cella {cell}, univerzum {universe}</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="525"/>
+        <location filename="../ui/geometry/view_panel.py" line="533"/>
         <source>importance {value} (lower bound {lower})</source>
         <translation>importance {value} (alsó korlát {lower})</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="531"/>
+        <location filename="../ui/geometry/view_panel.py" line="539"/>
         <source>no weight window</source>
         <translation>nincs súlyablak</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="547"/>
+        <location filename="../ui/geometry/view_panel.py" line="555"/>
         <source>Inspect here</source>
         <translation>Vizsgálat itt</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="548"/>
+        <location filename="../ui/geometry/view_panel.py" line="556"/>
         <source>Set the other view&apos;s cut here</source>
         <translation>A másik nézet metszősíkja ide</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="549"/>
+        <location filename="../ui/geometry/view_panel.py" line="557"/>
         <source>Centre here</source>
         <translation>Középre ide</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="550"/>
+        <location filename="../ui/geometry/view_panel.py" line="558"/>
         <source>Copy coordinates</source>
         <translation>Koordináták másolása</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="552"/>
+        <location filename="../ui/geometry/view_panel.py" line="560"/>
         <source>Export image…</source>
         <translation>Kép exportálása…</translation>
     </message>
     <message>
-        <location filename="../ui/geometry/view_panel.py" line="553"/>
+        <location filename="../ui/geometry/view_panel.py" line="561"/>
         <source>Export slice data (.npz)…</source>
         <translation>Metszetadatok exportálása (.npz)…</translation>
     </message>

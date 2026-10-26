@@ -10,6 +10,7 @@ next slice.
 """
 
 import time
+from collections.abc import Callable
 
 import numpy as np
 from PySide6.QtCore import QPoint, Qt, QTimer, Signal
@@ -101,6 +102,10 @@ class ViewPanel(QFrame):
         self._inflight = False
         self._pending: bool | None = None  # preview flag of the state to fetch next
         self._initial_view: SavedView | bool | None = False  # False: nothing to apply
+        self.hover_extra: Callable[[tuple[float, float]], str] | None = None
+        """More text for the cursor read-out at (u, v), e.g. the particle track there."""
+        self.menu_extra: Callable[[QMenu, tuple[float, float]], None] | None = None
+        """Adds entries to the view's menu for (u, v)."""
 
         self.basis_combo = QComboBox()
         for basis, text in (
@@ -479,6 +484,9 @@ class ViewPanel(QFrame):
             index = pixel_index(self._shown_window, self._data.shape, *point)
             if index is not None:
                 text += "   │   " + self.describe_pixel(*index)
+        extra = self.hover_extra(point) if self.hover_extra is not None else ""
+        if extra:
+            text += "   │   " + extra
         self.hoverText.emit(text)
 
     def describe_pixel(self, row: int, col: int) -> str:
@@ -553,6 +561,8 @@ class ViewPanel(QFrame):
         export_data = menu.addAction(self.tr("Export slice data (.npz)…"))
         export_image.setEnabled(self._rgba is not None)
         export_data.setEnabled(self._data is not None)
+        if self.menu_extra is not None:
+            self.menu_extra(menu, point)
         chosen = menu.exec(screen)
         if chosen is inspect:
             self._clicked(point)

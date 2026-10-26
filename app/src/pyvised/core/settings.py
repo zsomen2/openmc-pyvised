@@ -7,6 +7,7 @@ from typing import cast
 from PySide6.QtCore import QByteArray, QSettings
 
 from pyvised_protocol.sidecar import Basis
+from pyvised_protocol.tracks import MAX_HISTORIES
 
 from .paths import default_workspace
 
@@ -15,6 +16,15 @@ MAX_RECENT = 8
 BASES = ("xy", "xz", "yz")
 COLOR_MODES = ("material", "cell", "universe", "density", "temperature", "importance", "none")
 LABEL_KINDS = ("none", "cell", "material", "universe")
+TRACK_STYLE_DEFAULTS = {
+    "lines": "0",
+    "particle_color": "energy",
+    "particle_rgb": "#ff8c00",
+    "line_color": "energy",
+    "line_rgb": "#1e6eff",
+    "markers": "births,collisions,ends",
+    "timeline": "events",
+}
 
 
 class ThemeMode(StrEnum):
@@ -248,6 +258,48 @@ class AppSettings:
     def set_run_limit(self, name: str, on: bool, value: float) -> None:
         self._store.setValue(f"simulation/{name}_on", bool(on))
         self._store.setValue(f"simulation/{name}", float(value))
+
+    # -- particle tracks --------------------------------------------------------
+
+    @property
+    def tracks_fade(self) -> bool:
+        """Fade the geometry under the particle tracks."""
+        return self._bool("tracks/fade", True)
+
+    @tracks_fade.setter
+    def tracks_fade(self, value: bool) -> None:
+        self._store.setValue("tracks/fade", bool(value))
+
+    @property
+    def tracks_histories(self) -> int:
+        return min(MAX_HISTORIES, max(1, self._int("tracks/histories", 100)))
+
+    @tracks_histories.setter
+    def tracks_histories(self, value: int) -> None:
+        self._store.setValue("tracks/histories", min(MAX_HISTORIES, max(1, int(value))))
+
+    @property
+    def tracks_style(self) -> dict[str, str]:
+        """How the tracks window draws: "lines" ("0"/"1"), "particle_color", "particle_rgb",
+        "line_color", "line_rgb" (#rrggbb), "markers" (comma-separated), "timeline"."""
+        out = {}
+        for key, default in TRACK_STYLE_DEFAULTS.items():
+            out[key] = str(self._store.value(f"tracks/{key}", default))
+        return out
+
+    def set_tracks_style(self, values: dict[str, str]) -> None:
+        for key, value in values.items():
+            if key in TRACK_STYLE_DEFAULTS:
+                self._store.setValue(f"tracks/{key}", str(value))
+
+    @property
+    def tracks_window(self) -> QByteArray | None:
+        value = self._store.value("tracks/window")
+        return value if isinstance(value, QByteArray) else None
+
+    @tracks_window.setter
+    def tracks_window(self, value: QByteArray) -> None:
+        self._store.setValue("tracks/window", value)
 
     # -- backend -------------------------------------------------------------
 

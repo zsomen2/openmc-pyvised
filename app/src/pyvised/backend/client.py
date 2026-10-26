@@ -24,11 +24,14 @@ from pyvised_protocol.schemas import (
     SliceRequest,
 )
 from pyvised_protocol.slices import SliceData, decode_slice
+from pyvised_protocol.tracks import TrackData, TrackRequest, decode_tracks
 
 OPEN_TIMEOUT = 300.0
 """Opening runs the model's builder script, which may take a while."""
 RUN_START_TIMEOUT = OPEN_TIMEOUT + 60.0
 """Starting a run exports the model with its parameters first."""
+TRACKS_TIMEOUT = 180.0
+"""The backend gives a tracked run 120 s."""
 
 
 @dataclass(frozen=True)
@@ -127,6 +130,18 @@ class ApiClient:
             "GET", f"/models/{model_id}/inspect", params={"x": x, "y": y, "z": z}, timeout=60.0
         )
         return InspectResult.model_validate(response.json())
+
+    def tracks(self, model_id: str, request: TrackRequest) -> TrackData:
+        response = self._request(
+            "POST",
+            f"/models/{model_id}/tracks",
+            json=request.model_dump(mode="json"),
+            timeout=TRACKS_TIMEOUT,
+        )
+        return decode_tracks(response.content)
+
+    def cancel_tracks(self, model_id: str) -> None:
+        self._request("DELETE", f"/models/{model_id}/tracks")
 
     def libraries(self) -> list[LibraryInfo]:
         return [LibraryInfo.model_validate(x) for x in self._request("GET", "/libraries").json()]

@@ -42,6 +42,7 @@ from ..core.run_session import RunSession
 from ..core.settings import AppSettings, ReloadPolicy
 from ..core.tasks import TaskRunner
 from ..core.theme import apply_theme
+from ..core.track_session import TrackSession
 from ..render.colorize import ColorMode
 from ..render.labels import LabelKind
 from ..render.scales import format_value
@@ -51,6 +52,7 @@ from .dialogs.text_dialog import TextDialog
 from .geometry.geometry_tab import GeometryTab
 from .simulation.simulation_tab import SimulationTab
 from .status_pill import StatusPill
+from .tracks.tracks_window import TracksWindow
 
 log = logging.getLogger(__name__)
 
@@ -77,6 +79,8 @@ class MainWindow(QMainWindow):
         self.tasks = tasks
         self.session = ModelSession(tasks, self)
         self.runs = RunSession(tasks, self)
+        self.track_session = TrackSession(tasks, self)
+        self.tracks_window: TracksWindow | None = None
         self._pending_open: Path | None = None
         self._backend_ready = False
         self.setMinimumSize(900, 600)
@@ -167,6 +171,8 @@ class MainWindow(QMainWindow):
         self.act_reset_views = self._action(
             self.tr("Re&set views"), self.geometry_tab.reset_views, "Ctrl+0"
         )
+        self.act_tracks = self._action(self.tr("Particle &tracks…"), self.show_tracks, "Ctrl+T")
+        self.act_tracks.setToolTip(self.tr("Generate particle tracks and play them on the views"))
         self.act_selftest = self._action(self.tr("Run backend &self-test"), self.run_selftest)
         self.act_backend_log = self._action(self.tr("Backend &log…"), self.show_backend_log)
         self.act_diagnostics = self._action(self.tr("Copy &diagnostics"), self.copy_diagnostics)
@@ -224,6 +230,8 @@ class MainWindow(QMainWindow):
         view.addSeparator()
         view.addAction(self.act_reset_views)
         tools = bar.addMenu(self.tr("&Tools"))
+        tools.addAction(self.act_tracks)
+        tools.addSeparator()
         tools.addAction(self.act_selftest)
         tools.addAction(self.act_backend_log)
         tools.addAction(self.act_diagnostics)
@@ -293,6 +301,7 @@ class MainWindow(QMainWindow):
         self.labels_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.labels_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
         toolbar.addWidget(self.labels_button)
+        toolbar.addAction(self.act_tracks)
         toolbar.addAction(self.act_reset_views)
         toolbar.addAction(self.act_export_image)
         spacer = QWidget()
@@ -315,6 +324,9 @@ class MainWindow(QMainWindow):
         self.tabs.setTabIcon(0, icon("mdi6.cube-outline"))
         self.tabs.setTabIcon(1, icon("mdi6.chart-bell-curve-cumulative"))
         self.act_libraries.setIcon(icon("mdi6.database-outline"))
+        self.act_tracks.setIcon(icon("mdi6.atom-variant"))
+        if self.tracks_window is not None:
+            self.tracks_window.refresh_icons()
         self.geometry_tab.refresh_icon()
         self.simulation_tab.refresh_icons()
 
@@ -348,7 +360,10 @@ class MainWindow(QMainWindow):
         self.settings.window_state = self.saveState()
         self.settings.geometry_splitter = self.geometry_tab.save_state()
         self.settings.simulation_splitter = self.simulation_tab.save_state()
+        if self.tracks_window is not None:
+            self.settings.tracks_window = self.tracks_window.saveGeometry()
         self.settings.sync()
+        self.track_session.cancel()
         self.runs.shutdown()
         super().closeEvent(event)
 
@@ -408,6 +423,9 @@ class MainWindow(QMainWindow):
         shown = self.session.info is not None
         self.act_export_image.setEnabled(shown)
         self.act_export_data.setEnabled(shown)
+        health = self.backend.health
+        tracks = health is not None and "tracks" in health.capabilities
+        self.act_tracks.setEnabled(ready and shown and tracks)
 
     def _update_title(self) -> None:
         info = self.session.info
@@ -509,6 +527,29 @@ class MainWindow(QMainWindow):
                 WeightWindowLayer(particle=particle, energy=energy)
             )
 
+    def show_tracks(self) -> None:
+        """Open (or bring up) the particle tracks window next to the main window."""
+        window = self.tracks_window
+        if window is None:
+            window = TracksWindow(
+                self.geometry_tab.tracks,
+                self.track_session,
+                self.settings,
+                lambda: self.geometry_tab.inspected_point,
+                self,
+            )
+            window.moveCutsRequested.connect(self.geometry_tab.move_cuts)
+            saved = self.settings.tracks_window
+            if saved is None or not window.restoreGeometry(saved):
+                frame = self.frameGeometry()
+                window.move(frame.right() - window.width() - 24, frame.top() + 90)
+            self.tracks_window = window
+        window.set_model(self.session.info)
+        self.tabs.setCurrentWidget(self.geometry_tab)
+        window.show()
+        window.raise_()
+        window.activateWindow()
+
     def set_labels(self, kind: LabelKind) -> None:
         self.geometry_tab.set_labels(kind)
         for key, action in self.label_actions.items():
@@ -543,6 +584,8 @@ class MainWindow(QMainWindow):
         self.simulation_tab.set_busy(False)
         self.geometry_tab.show_model(info, reloaded)
         self.simulation_tab.show_model(info)
+        if self.tracks_window is not None:
+            self.tracks_window.set_model(info)
         self._fill_mode_controls(info)
         if self.geometry_tab.color_mode is ColorMode.IMPORTANCE and not info.weight_windows:
             self.set_color_mode(ColorMode.MATERIAL)
@@ -587,6 +630,7 @@ class MainWindow(QMainWindow):
         if ready and connection is not None and not self.session.ready:
             self.session.set_connection(connection, self.backend.config.workspace)
             self.runs.set_connection(connection)
+            self.track_session.set_connection(connection)
             self.simulation_tab.set_backend(self.backend.health)
             if self._pending_open is not None:
                 path, self._pending_open = self._pending_open, None
@@ -596,6 +640,7 @@ class MainWindow(QMainWindow):
         elif not ready and self.session.ready:
             self.session.set_connection(None, self.backend.config.workspace)
             self.runs.set_connection(None)
+            self.track_session.set_connection(None)
             self.simulation_tab.set_backend(None)
         self._update_actions()
 

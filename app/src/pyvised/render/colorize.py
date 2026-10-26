@@ -66,6 +66,8 @@ class Style:
     outside: RGB = palette.OUTSIDE_LIGHT
     overlap: RGB = palette.OVERLAP
     no_data: RGB = palette.NO_DATA_LIGHT
+    fade: float = 0.0
+    """Share of the background mixed into everything (0 … 1), e.g. under particle tracks."""
 
     @classmethod
     def for_background(
@@ -296,6 +298,14 @@ def boundaries(data: SliceData, line_mode: LineMode, width: int = 1) -> np.ndarr
     return edge
 
 
+def fade(rgb: np.ndarray, background: RGB, share: float) -> np.ndarray:
+    """Mix `share` (0 … 1, in 16ths) of the background into the colours."""
+    weight = min(16, max(0, round(share * 16)))
+    mixed = rgb.astype(np.uint16) * (16 - weight)
+    mixed += np.array(background, dtype=np.uint16) * weight
+    return (mixed >> 4).astype(np.uint8)
+
+
 def colorize(
     data: SliceData,
     style: Style,
@@ -332,6 +342,8 @@ def colorize(
         rgb[dim] = ((rgb[dim].astype(np.uint16) * 3 + background * 7) // 10).astype(np.uint8)
     if style.lines:
         rgb[boundaries(data, style.line_mode, style.line_width)] = style.line_color
+    if style.fade > 0:
+        rgb = fade(rgb, style.background, style.fade)
     rgba = np.empty((*data.shape, 4), dtype=np.uint8)
     rgba[..., :3] = rgb
     rgba[..., 3] = 255

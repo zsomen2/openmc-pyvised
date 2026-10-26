@@ -5,7 +5,7 @@ whole model again, a click inspects the point and a right click opens the
 view's menu. Zooming and panning transform the current image at once; the
 panel then asks the backend for a sharp slice of the new window. On top of the
 image the view draws the other view's cut plane as a draggable line, the
-region labels and a marker at the inspected point.
+region labels, a marker at the inspected point and overlays such as the particle tracks.
 """
 
 import os
@@ -169,6 +169,10 @@ class SliceView(pg.PlotWidget):
         for item in self._labels[len(labels) :]:
             item.hide()
 
+    def add_overlay(self, item: pg.GraphicsObject) -> None:
+        """Draw `item` over the slice in view coordinates; it does not change the zoom."""
+        self._plot().addItem(item, ignoreBounds=True)
+
     def label_count(self) -> int:
         return sum(1 for item in self._labels if item.isVisible())
 
@@ -188,6 +192,11 @@ class SliceView(pg.PlotWidget):
         """Logical pixels of the plotting area."""
         rect = self._box.boundingRect()
         return rect.width(), rect.height()
+
+    def pixel_size(self) -> float:
+        """cm per logical pixel."""
+        width = self.view_size()[0]
+        return self.visible_window().width / width if width > 0 else 1.0
 
     def show_range(self, u_range: tuple[float, float], v_range: tuple[float, float]) -> None:
         self._box.setRange(xRange=u_range, yRange=v_range, padding=0.02)
