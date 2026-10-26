@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "title": {
+    "en": "Water cylinder with a volume source",
+    "hu": "Vízhenger térfogati forrással"
+  },
+  "description": {
+    "en": "Create a water cylinder. Place a spatially uniform photon source inside it, with the energy and source strength specified in Task 1. Investigate the photon flux on the lateral surface of the cylinder.",
+    "hu": "Készítsünk egy vízhengert. Helyezzünk bele térben egyenletes eloszlású fotonforrást, az 1. feladatban megadott energiával és forráserősséggel. Vizsgáljuk meg a fotonfluxust a henger palástján."
+  },
+  "material_colors": {
+    "1": "#4a90d9"
+  },
+  "parameters": [
+    {
+      "name": "radius",
+      "label": {
+        "en": "Cylinder radius",
+        "hu": "A henger sugara"
+      },
+      "unit": "cm",
+      "default": 1.0,
+      "minimum": 0.5,
+      "maximum": 50.0,
+      "step": 0.5
+    },
+    {
+      "name": "height",
+      "label": {
+        "en": "Cylinder height",
+        "hu": "A henger magassága"
+      },
+      "unit": "cm",
+      "default": 10.0,
+      "minimum": 1.0,
+      "maximum": 100.0,
+      "step": 1.0
+    },
+    {
+      "name": "energy",
+      "label": {
+        "en": "Photon energy",
+        "hu": "Fotonenergia"
+      },
+      "unit": "MeV",
+      "default": 1.0,
+      "minimum": 0.05,
+      "maximum": 10.0,
+      "step": 0.1
+    }
+  ],
+  "tallies": {
+    "2": {
+      "source_strength": 1000000.0,
+      "divide_by": "area",
+      "divisor": "2*pi*radius*height",
+      "unit": "1/(cm²·s)",
+      "note": "fm2 1e6: 1e6 photons/s; OpenMC does not divide a surface flux by the area, 2·π·r·h of the lateral surface 1"
+    },
+    "12": {
+      "source_strength": 1000000.0,
+      "divide_by": "area",
+      "divisor": "2*pi*radius*height",
+      "unit": "1/(cm²·s)",
+      "note": "fm12 1e6: 1e6 photons/s; OpenMC does not divide a surface flux by the area, 2·π·r·h of the lateral surface 1"
+    }
+  },
+  "references": [
+    {
+      "name": "uncollided flux (integral)",
+      "tally": 12,
+      "value": 24387.0,
+      "rel_err": 0.00013,
+      "unit": "1/(cm²·s)",
+      "source": "mean over the lateral surface of S/(4πμV)·∫(1 − exp(−μL))dΩ, L = chord through the water; μ/ρ = 0.07065 cm²/g (water, 1 MeV, ENDF/B-VII.1 photon data)",
+      "params": {
+        "radius": 1.0,
+        "height": 10.0,
+        "energy": 1.0
+      }
+    }
+  ],
+  "run_presets": [
+    {
+      "name": "quick",
+      "label": {
+        "en": "Quick look (10 × 10000 photons)",
+        "hu": "Gyors próba (10 × 10000 foton)"
+      },
+      "particles": 10000,
+      "batches": 10,
+      "note": {
+        "en": "1e5 photons in a few seconds.",
+        "hu": "1e5 foton néhány másodperc alatt."
+      }
+    },
+    {
+      "name": "large",
+      "label": {
+        "en": "Precise (100 × 100000 photons)",
+        "hu": "Pontos (100 × 100000 foton)"
+      },
+      "particles": 100000,
+      "batches": 100,
+      "note": {
+        "en": "1e7 photons; for large cylinders, where few photons reach the lateral surface unscattered.",
+        "hu": "1e7 foton; nagy hengerekhez, ahol kevés foton ér szórás nélkül a palástra."
+      }
+    }
+  ]
+}
