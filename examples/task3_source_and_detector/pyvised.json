@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "title": {
+    "en": "Source and detector cylinders",
+    "hu": "Forrás- és detektorhenger"
+  },
+  "description": {
+    "en": "3.1. Create two water cylinders. One should serve as the source, as described in Task 2. Designate the other cylinder as the detector (volume tally). Investigate the photon flux.\n3.2. Replace the photon source with a neutron source. Set the initial neutron energy to 1 MeV. Investigate the neutron spectrum formed inside the detector cylinder. Use 100 logarithmically spaced energy bins between 1E-9 MeV and 10 MeV.\n3.3. Plot the resulting neutron spectrum on a log-log scale.",
+    "hu": "3.1. Készítsünk két vízhengert. Az egyik legyen a forrás a 2. feladat szerint. A másik hengert jelöljük ki detektorként (térfogati tally). Vizsgáljuk meg a fotonfluxust.\n3.2. Cseréljük ki a fotonforrást neutronforrásra. A kiinduló neutronok energiája legyen 1 MeV. Vizsgáljuk meg a detektorhengerben kialakuló neutronspektrumot. Ehhez használjunk 100, logaritmikusan egyenletes energiabint 1E-9 MeV és 10 MeV között.\n3.3. Ábrázoljuk a kapott neutronspektrumot log-log skálán."
+  },
+  "material_colors": {
+    "1": "#4a90d9"
+  },
+  "parameters": [
+    {
+      "name": "neutron",
+      "label": {
+        "en": "Neutron source (3.2); off: photons (3.1)",
+        "hu": "Neutronforrás (3.2); kikapcsolva: fotonok (3.1)"
+      },
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "step": 1
+    },
+    {
+      "name": "distance",
+      "label": {
+        "en": "Distance of the cylinder axes",
+        "hu": "A hengertengelyek távolsága"
+      },
+      "unit": "cm",
+      "default": 10.0,
+      "minimum": 5.0,
+      "maximum": 50.0,
+      "step": 1.0
+    }
+  ],
+  "tallies": {
+    "4": {
+      "source_strength": 1000000.0,
+      "divide_by": "volume",
+      "divisor": 282.7433388,
+      "unit": "1/(cm²·s)",
+      "note": "fm4 1e6: 1e6 particles/s; OpenMC does not divide a cell flux by the volume, π·3²·10 cm³ of the detector (cell 20)"
+    },
+    "14": {
+      "source_strength": 1000000.0,
+      "divide_by": "volume",
+      "divisor": 282.7433388,
+      "unit": "1/(cm²·s)",
+      "note": "fm14 1e6: 1e6 particles/s, per energy bin; OpenMC does not divide a cell flux by the volume, π·3²·10 cm³ of the detector (cell 20)"
+    }
+  },
+  "run_presets": [
+    {
+      "name": "photons",
+      "label": {
+        "en": "3.1: photons (100 × 10000)",
+        "hu": "3.1: fotonok (100 × 10000)"
+      },
+      "particles": 10000,
+      "batches": 100,
+      "params": {
+        "neutron": 0
+      },
+      "note": {
+        "en": "1 MeV photons from the source cylinder; tally 4 is the photon flux in the detector.",
+        "hu": "1 MeV-es fotonok a forráshengerből; a 4-es tally a fotonfluxus a detektorban."
+      }
+    },
+    {
+      "name": "neutrons",
+      "label": {
+        "en": "3.2: neutrons (100 × 10000)",
+        "hu": "3.2: neutronok (100 × 10000)"
+      },
+      "particles": 10000,
+      "batches": 100,
+      "params": {
+        "neutron": 1
+      },
+      "note": {
+        "en": "1 MeV neutrons; tally 14 is the neutron spectrum in the detector (Plots: log-log).",
+        "hu": "1 MeV-es neutronok; a 14-es tally a detektorbeli neutronspektrum (Grafikonok: log-log)."
+      }
+    }
+  ]
+}
