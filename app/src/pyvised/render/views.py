@@ -7,7 +7,12 @@ the vertical axis v up; the cut position w is the coordinate along the normal.
 import math
 from dataclasses import dataclass
 
-from pyvised_protocol.schemas import MAX_SLICE_PIXELS, BoundingBox, SliceRequest
+from pyvised_protocol.schemas import (
+    MAX_SLICE_PIXELS,
+    BoundingBox,
+    SliceRequest,
+    WeightWindowLayer,
+)
 from pyvised_protocol.sidecar import Basis
 
 AXIS_NAMES = ("x", "y", "z")
@@ -41,6 +46,16 @@ def plane_extent(
 
 
 @dataclass(frozen=True)
+class SliceLayers:
+    """The optional maps a view asks for besides the deepest cells."""
+
+    level: int | None = None
+    """Universe level of the `level_cells` layer (universe colours at that level)."""
+    temperature: bool = False
+    weight_windows: WeightWindowLayer | None = None
+
+
+@dataclass(frozen=True)
 class Window:
     """A rectangle of the plane in view coordinates [cm]."""
 
@@ -58,15 +73,25 @@ class Window:
 
 
 def slice_request(
-    basis: Basis, window: Window, cut: float, pixels: tuple[int, int], *, overlaps: bool = True
+    basis: Basis,
+    window: Window,
+    cut: float,
+    pixels: tuple[int, int],
+    *,
+    overlaps: bool = True,
+    layers: SliceLayers | None = None,
 ) -> SliceRequest:
     cu, cv = window.center
+    layers = layers or SliceLayers()
     return SliceRequest(
         basis=basis,
         origin=world_point(basis, cu, cv, cut),
         width=(window.width, window.height),
         pixels=pixels,
         show_overlaps=overlaps,
+        level=layers.level,
+        properties=layers.temperature,
+        weight_windows=layers.weight_windows,
     )
 
 

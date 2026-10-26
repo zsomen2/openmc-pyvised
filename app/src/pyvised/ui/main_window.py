@@ -1,5 +1,6 @@
 """The main window: Geometry and Simulation tabs, menus, toolbar and the backend status."""
 
+import itertools
 import logging
 import os
 import platform
@@ -7,7 +8,14 @@ from pathlib import Path
 
 import PySide6
 from PySide6.QtCore import QSize, Qt, QUrl, qVersion
-from PySide6.QtGui import QAction, QCloseEvent, QDesktopServices, QGuiApplication, QKeySequence
+from PySide6.QtGui import (
+    QAction,
+    QActionGroup,
+    QCloseEvent,
+    QDesktopServices,
+    QGuiApplication,
+    QKeySequence,
+)
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -18,10 +26,11 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QTabWidget,
     QToolBar,
+    QToolButton,
     QWidget,
 )
 
-from pyvised_protocol.schemas import ModelInfo, SelfTestResult
+from pyvised_protocol.schemas import ModelInfo, SelfTestResult, WeightWindowLayer
 
 from .. import REPOSITORY_URL, __version__
 from ..backend.client import ApiClient
@@ -32,6 +41,8 @@ from ..core.settings import AppSettings, ReloadPolicy
 from ..core.tasks import TaskRunner
 from ..core.theme import apply_theme
 from ..render.colorize import ColorMode
+from ..render.labels import LabelKind
+from ..render.scales import format_value
 from .dialogs.about import AboutDialog
 from .dialogs.settings_dialog import SettingsDialog
 from .dialogs.text_dialog import TextDialog
@@ -101,6 +112,9 @@ class MainWindow(QMainWindow):
             lambda seconds: self.render_label.setText(f"{seconds * 1000:.0f} ms")
         )
         self.geometry_tab.reloadRequested.connect(self.reload_model)
+        self.geometry_tab.statusMessage.connect(
+            lambda text: self.statusBar().showMessage(text, 6000)
+        )
 
         backend.stateChanged.connect(self._on_backend_state)
         self._on_backend_state(backend.state.value, backend.detail)
@@ -130,6 +144,15 @@ class MainWindow(QMainWindow):
         )
         self.act_open_workspace = self._action(
             self.tr("Open workspace &folder"), self.open_workspace_folder
+        )
+        self.act_export_image = self._action(
+            self.tr("&Export image…"),
+            lambda: self.geometry_tab.export_view(None, "image"),
+            "Ctrl+E",
+        )
+        self.act_export_data = self._action(
+            self.tr("Export slice &data (.npz)…"),
+            lambda: self.geometry_tab.export_view(None, "data"),
         )
         self.act_exit = self._action(self.tr("E&xit"), self.close, QKeySequence.StandardKey.Quit)
         self.act_lines = self._action(self.tr("Boundary &lines"), self.geometry_tab.set_lines)
@@ -163,6 +186,9 @@ class MainWindow(QMainWindow):
         file_menu.addMenu(self.recent_menu)
         file_menu.addAction(self.act_reload)
         file_menu.addSeparator()
+        file_menu.addAction(self.act_export_image)
+        file_menu.addAction(self.act_export_data)
+        file_menu.addSeparator()
         file_menu.addAction(self.act_switch_workspace)
         file_menu.addAction(self.act_open_workspace)
         file_menu.addSeparator()
@@ -176,6 +202,16 @@ class MainWindow(QMainWindow):
             self.color_menu.addAction(action)
             self.color_actions[mode] = action
         view.addAction(self.act_lines)
+        self.labels_menu = view.addMenu(self.tr("&Labels"))
+        self.label_actions: dict[LabelKind, QAction] = {}
+        group = QActionGroup(self)
+        for kind, text in self._label_kinds():
+            action = self._action(text, lambda checked, k=kind: self.set_labels(k))
+            action.setCheckable(True)
+            action.setChecked(kind is self.geometry_tab.label_kind)
+            group.addAction(action)
+            self.labels_menu.addAction(action)
+            self.label_actions[kind] = action
         view.addSeparator()
         view.addAction(self.act_reset_views)
         tools = bar.addMenu(self.tr("&Tools"))
@@ -196,7 +232,19 @@ class MainWindow(QMainWindow):
         return [
             (ColorMode.MATERIAL, self.tr("Material")),
             (ColorMode.CELL, self.tr("Cell")),
+            (ColorMode.UNIVERSE, self.tr("Universe")),
+            (ColorMode.DENSITY, self.tr("Density")),
+            (ColorMode.TEMPERATURE, self.tr("Temperature")),
+            (ColorMode.IMPORTANCE, self.tr("Importance (weight windows)")),
             (ColorMode.NONE, self.tr("None (lines only)")),
+        ]
+
+    def _label_kinds(self) -> list[tuple[LabelKind, str]]:
+        return [
+            (LabelKind.NONE, self.tr("No labels")),
+            (LabelKind.CELL, self.tr("Cell numbers")),
+            (LabelKind.MATERIAL, self.tr("Material numbers")),
+            (LabelKind.UNIVERSE, self.tr("Universe numbers")),
         ]
 
     def _create_toolbar(self) -> None:
@@ -215,8 +263,28 @@ class MainWindow(QMainWindow):
             lambda index: self.set_color_mode(ColorMode(self.color_combo.itemData(index)))
         )
         toolbar.addWidget(self.color_combo)
+        self.level_label = QLabel(" " + self.tr("Level:") + " ")
+        self.level_combo = QComboBox()
+        self.level_combo.setToolTip(
+            self.tr("Colour by the universes at this level (0: the root universe's cells)")
+        )
+        self.level_combo.currentIndexChanged.connect(self._level_chosen)
+        self.level_label_action = toolbar.addWidget(self.level_label)
+        self.level_combo_action = toolbar.addWidget(self.level_combo)
+        self.ww_combo = QComboBox()
+        self.ww_combo.setToolTip(self.tr("Particle and energy group of the weight windows"))
+        self.ww_combo.currentIndexChanged.connect(self._weight_windows_chosen)
+        self.ww_combo_action = toolbar.addWidget(self.ww_combo)
         toolbar.addAction(self.act_lines)
+        self.labels_button = QToolButton()
+        self.labels_button.setText(self.tr("Labels"))
+        self.labels_button.setToolTip(self.tr("Numbers on the regions"))
+        self.labels_button.setMenu(self.labels_menu)
+        self.labels_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.labels_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+        toolbar.addWidget(self.labels_button)
         toolbar.addAction(self.act_reset_views)
+        toolbar.addAction(self.act_export_image)
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         toolbar.addWidget(spacer)
@@ -229,6 +297,8 @@ class MainWindow(QMainWindow):
         self.act_reload.setIcon(icon("mdi6.refresh"))
         self.act_lines.setIcon(icon("mdi6.vector-square"))
         self.act_reset_views.setIcon(icon("mdi6.fit-to-screen-outline"))
+        self.act_export_image.setIcon(icon("mdi6.image-move"))
+        self.labels_button.setIcon(icon("mdi6.numeric"))
         self.act_settings.setIcon(icon("mdi6.cog-outline"))
         self.act_selftest.setIcon(icon("mdi6.stethoscope"))
         self.act_restart.setIcon(icon("mdi6.restart"))
@@ -263,6 +333,9 @@ class MainWindow(QMainWindow):
         )
         self.act_selftest.setEnabled(ready)
         self.act_restart.setEnabled(not self.backend.busy or not ready)
+        shown = self.session.info is not None
+        self.act_export_image.setEnabled(shown)
+        self.act_export_data.setEnabled(shown)
 
     def _update_title(self) -> None:
         info = self.session.info
@@ -307,6 +380,67 @@ class MainWindow(QMainWindow):
         self.color_combo.blockSignals(False)
         for key, action in self.color_actions.items():
             action.setChecked(key is mode)
+        self._update_mode_controls()
+
+    def _update_mode_controls(self) -> None:
+        """Show the level and weight-window choices only where the colour mode uses them."""
+        mode = self.geometry_tab.color_mode
+        info = self.session.info
+        universe = mode is ColorMode.UNIVERSE and info is not None
+        self.level_label_action.setVisible(universe)
+        self.level_combo_action.setVisible(universe)
+        many = self.ww_combo.count() > 1
+        self.ww_combo_action.setVisible(mode is ColorMode.IMPORTANCE and many)
+        has_windows = info is not None and bool(info.weight_windows)
+        index = self.color_combo.findData(ColorMode.IMPORTANCE.value)
+        item = self.color_combo.model().item(index)  # type: ignore[attr-defined]
+        if item is not None:
+            item.setEnabled(has_windows or info is None)
+        self.color_actions[ColorMode.IMPORTANCE].setEnabled(has_windows or info is None)
+
+    def _fill_mode_controls(self, info: ModelInfo) -> None:
+        """Level and weight-window choices of a newly opened model."""
+        self.level_combo.blockSignals(True)
+        self.level_combo.clear()
+        self.level_combo.addItem(self.tr("Deepest"), None)
+        for level in range(info.max_level + 1):
+            self.level_combo.addItem(str(level), level)
+        current = self.geometry_tab.universe_level
+        self.level_combo.setCurrentIndex(max(0, self.level_combo.findData(current)))
+        self.level_combo.blockSignals(False)
+        self.ww_combo.blockSignals(True)
+        self.ww_combo.clear()
+        seen = set()
+        for ww in info.weight_windows:
+            bounds = ww.energy_bounds or [0.0, 0.0]
+            for low, high in itertools.pairwise(bounds):
+                energy = (low * high) ** 0.5 if low > 0 else high / 2
+                key = (ww.particle, format_value(low), format_value(high))
+                if key in seen:
+                    continue
+                seen.add(key)
+                text = self.tr("{particle}, {low} – {high} eV").format(
+                    particle=ww.particle, low=key[1], high=key[2]
+                )
+                self.ww_combo.addItem(text, (ww.particle, energy))
+        self.ww_combo.blockSignals(False)
+        self._update_mode_controls()
+
+    def _level_chosen(self, index: int) -> None:
+        self.geometry_tab.set_universe_level(self.level_combo.itemData(index))
+
+    def _weight_windows_chosen(self, index: int) -> None:
+        data = self.ww_combo.itemData(index)
+        if data is not None:
+            particle, energy = data
+            self.geometry_tab.set_weight_window_layer(
+                WeightWindowLayer(particle=particle, energy=energy)
+            )
+
+    def set_labels(self, kind: LabelKind) -> None:
+        self.geometry_tab.set_labels(kind)
+        for key, action in self.label_actions.items():
+            action.setChecked(key is kind)
 
     def _fill_recent_menu(self) -> None:
         self.recent_menu.clear()
@@ -332,6 +466,9 @@ class MainWindow(QMainWindow):
             self.settings.add_recent_model(self.session.path)
             self.settings.sync()
         self.geometry_tab.show_model(info, reloaded)
+        self._fill_mode_controls(info)
+        if self.geometry_tab.color_mode is ColorMode.IMPORTANCE and not info.weight_windows:
+            self.set_color_mode(ColorMode.MATERIAL)
         self.tabs.setCurrentWidget(self.geometry_tab)
         self._update_title()
         self._update_actions()

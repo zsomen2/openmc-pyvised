@@ -7,6 +7,7 @@ import httpx
 from pyvised_protocol import API_PREFIX
 from pyvised_protocol.schemas import (
     HealthInfo,
+    InspectResult,
     ModelInfo,
     OpenModelRequest,
     SelfTestResult,
@@ -97,3 +98,10 @@ class ApiClient:
             "POST", f"/models/{model_id}/slice", json=request.model_dump(), timeout=120.0
         )
         return decode_slice(response.content)
+
+    def inspect(self, model_id: str, point: tuple[float, float, float]) -> InspectResult:
+        x, y, z = point
+        response = self._request(
+            "GET", f"/models/{model_id}/inspect", params={"x": x, "y": y, "z": z}, timeout=60.0
+        )
+        return InspectResult.model_validate(response.json())

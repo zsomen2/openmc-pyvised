@@ -13,6 +13,8 @@ from .paths import default_workspace
 LANGUAGES = {"en": "English", "hu": "Magyar"}
 MAX_RECENT = 8
 BASES = ("xy", "xz", "yz")
+COLOR_MODES = ("material", "cell", "universe", "density", "temperature", "importance", "none")
+LABEL_KINDS = ("none", "cell", "material", "universe")
 
 
 class ThemeMode(StrEnum):
@@ -146,11 +148,21 @@ class AppSettings:
     def color_mode(self) -> str:
         """Value of `render.colorize.ColorMode`."""
         value = str(self._store.value("geometry/color_mode", "material"))
-        return value if value in ("material", "cell", "none") else "material"
+        return value if value in COLOR_MODES else "material"
 
     @color_mode.setter
     def color_mode(self, value: str) -> None:
         self._store.setValue("geometry/color_mode", value)
+
+    @property
+    def labels(self) -> str:
+        """Value of `render.labels.LabelKind`: what the labels on the views show."""
+        value = str(self._store.value("geometry/labels", "none"))
+        return value if value in LABEL_KINDS else "none"
+
+    @labels.setter
+    def labels(self, value: str) -> None:
+        self._store.setValue("geometry/labels", value)
 
     @property
     def show_lines(self) -> bool:

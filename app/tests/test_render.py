@@ -6,6 +6,7 @@ import pytest
 from pyvised.render import palette
 from pyvised.render.colorize import (
     ColorMode,
+    ColorTables,
     LineMode,
     Style,
     boundaries,
@@ -81,7 +82,7 @@ def test_colorize_special_values_and_lines():
     cells = [[1, 1, 2, -4, OUTSIDE]]
     materials = [[1, 1, VOID, OVERLAP, OUTSIDE]]
     data = slice_of(cells, materials=materials)
-    colors = {1: (10, 20, 30)}
+    colors = ColorTables(materials={1: (10, 20, 30)})
     style = Style(lines=False)
     rgba = colorize(data, style, colors)
     assert rgba.shape == (1, 5, 4) and (rgba[..., 3] == 255).all()
@@ -96,11 +97,11 @@ def test_colorize_special_values_and_lines():
 
 def test_lines_only_and_cell_modes():
     data = slice_of([[1, 1, 2, 2]], materials=[[3, 3, 3, OUTSIDE]])
-    lines_only = colorize(data, Style(mode=ColorMode.NONE), {3: (1, 2, 3)})
+    lines_only = colorize(data, Style(mode=ColorMode.NONE), ColorTables(materials={3: (1, 2, 3)}))
     assert lines_only[0, 0, :3].tolist() == list(WHITE)
     assert lines_only[0, 2, :3].tolist() == list(BLACK)
     assert lines_only[0, 3, :3].tolist() == list(WHITE), "lines only: no grey outside"
-    by_cell = colorize(data, Style(mode=ColorMode.CELL, lines=False), {})
+    by_cell = colorize(data, Style(mode=ColorMode.CELL, lines=False), ColorTables())
     assert by_cell[0, 0, :3].tolist() == list(palette.cell_color(1))
     assert by_cell[0, 0, :3].tolist() != by_cell[0, 2, :3].tolist()
 

@@ -14,7 +14,7 @@ from typing import Any
 from PySide6.QtCore import QFileSystemWatcher, QObject, QTimer, Signal
 
 from pyvised_protocol.schemas import ModelInfo, OpenModelRequest, SliceRequest
-from pyvised_protocol.sidecar import SIDECAR_NAME
+from pyvised_protocol.sidecar import SIDECAR_NAME, update_sidecar
 
 from ..backend.client import ApiClient, BackendError, Connection
 from .tasks import TaskRunner
@@ -136,6 +136,29 @@ class ModelSession(QObject):
             self._api.slice, self.info.model_id, request, on_result=on_result, on_error=on_error
         )
         return True
+
+    def inspect(
+        self,
+        point: tuple[float, float, float],
+        on_result: Callable[[Any], None],
+        on_error: Callable[[Exception], None],
+    ) -> bool:
+        """Ask for the nesting path at `point` (an `InspectResult`)."""
+        if self._api is None or self.info is None:
+            return False
+        self.tasks.submit(
+            self._api.inspect, self.info.model_id, point, on_result=on_result, on_error=on_error
+        )
+        return True
+
+    def update_sidecar(self, changes: dict[str, Any]) -> None:
+        """Write `changes` to the open model's sidecar and keep `info.sidecar` in step.
+
+        Raises OSError or ValueError when the file cannot be written.
+        """
+        if self.path is None or self.info is None:
+            return
+        self.info.sidecar = update_sidecar(self.path.parent, changes)
 
     # -- results ---------------------------------------------------------------
 

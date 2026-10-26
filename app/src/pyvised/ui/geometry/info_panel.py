@@ -2,7 +2,10 @@
 
 One tree with collapsible sections. The geometry branch expands lazily
 (universe -> cells -> fills -> lattices), so large models stay quick; rebuilt
-MCNP decks keep their numbers, so it reads like the deck.
+MCNP decks keep their numbers, so it reads like the deck. Selecting a
+material, cell, universe or lattice highlights it in the views; double-clicking
+a material changes its colour. An inspected point gets its own section at the
+top: the nesting path from the root universe down.
 """
 
 from PySide6.QtCore import Qt, Signal
@@ -17,7 +20,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from pyvised_protocol.schemas import CellInfo, LatticeInfo, ModelInfo, UniverseInfo
+from pyvised_protocol.schemas import (
+    CellInfo,
+    InspectResult,
+    LatticeInfo,
+    ModelInfo,
+    UniverseInfo,
+)
 
 from ...core.icons import icon
 from ...render.palette import RGB
@@ -25,6 +34,8 @@ from ...render.views import AXIS_NAMES
 
 _NODE = Qt.ItemDataRole.UserRole
 """Item data: ("universe" | "lattice", id) for geometry nodes that expand lazily."""
+_SELECT = Qt.ItemDataRole.UserRole + 1
+"""Item data: ("material" | "cell" | "universe", id) of what selecting the item highlights."""
 
 
 def swatch(rgb: RGB, size: int = 12) -> QIcon:
@@ -39,6 +50,9 @@ def _number(value: float) -> str:
 
 class InfoPanel(QWidget):
     outputRequested = Signal()
+    highlightRequested = Signal(object)
+    """("material" | "cell" | "universe", id) of the selected item, or None."""
+    colorEditRequested = Signal(str, int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -64,6 +78,9 @@ class InfoPanel(QWidget):
         self.tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.tree.header().setStretchLastSection(True)
         self.tree.itemExpanded.connect(self._expand)
+        self.tree.currentItemChanged.connect(self._selected)
+        self.tree.itemDoubleClicked.connect(self._double_clicked)
+        self._point: InspectResult | None = None
         self.output_button = QPushButton(self.tr("Builder output…"))
         self.output_button.clicked.connect(self.outputRequested)
 
@@ -77,6 +94,7 @@ class InfoPanel(QWidget):
 
     def clear(self) -> None:
         self.info = None
+        self._point = None
         self.title.setText(self.tr("No model open"))
         self.description.hide()
         self.tree.clear()
@@ -96,7 +114,10 @@ class InfoPanel(QWidget):
         self.description.setVisible(bool(description))
         self.output_button.setVisible(bool(info.builder_output.strip()))
 
+        self.tree.blockSignals(True)
         self.tree.clear()
+        self.tree.blockSignals(False)
+        self._point = None
         self._model_section(info)
         self._materials_section(info, colors)
         self._geometry_section(info)
@@ -104,6 +125,80 @@ class InfoPanel(QWidget):
         self._tallies_section(info)
         for index, item in enumerate(self._sections()):
             item.setExpanded(item.data(0, _NODE) in expanded if expanded else index < 2)
+
+    def set_material_colors(self, colors: dict[int, RGB]) -> None:
+        """New swatches after a colour change."""
+        section = self._section_item("materials")
+        if section is None:
+            return
+        for i in range(section.childCount()):
+            item = section.child(i)
+            selection = item.data(0, _SELECT) if item is not None else None
+            if item is not None and selection and selection[1] in colors:
+                item.setIcon(0, swatch(colors[selection[1]]))
+
+    def clear_selection(self) -> None:
+        self.tree.blockSignals(True)
+        self.tree.clearSelection()
+        self.tree.setCurrentItem(None)  # pyright: ignore[reportArgumentType]
+        self.tree.blockSignals(False)
+
+    def show_point(self, result: InspectResult | None) -> None:
+        """The nesting path at an inspected point, as the first section."""
+        old = self._section_item("point")
+        if old is not None:
+            self.tree.blockSignals(True)
+            self.tree.takeTopLevelItem(self.tree.indexOfTopLevelItem(old))
+            self.tree.blockSignals(False)
+        self._point = result
+        if result is None:
+            return
+        x, y, z = result.point
+        title = self.tr("Point ({x}, {y}, {z}) cm").format(x=_number(x), y=_number(y), z=_number(z))
+        section = QTreeWidgetItem([title])
+        font = section.font(0)
+        font.setBold(True)
+        section.setFont(0, font)
+        section.setData(0, _NODE, "point")
+        self.tree.insertTopLevelItem(0, section)
+        section.setFirstColumnSpanned(True)
+        if not result.found:
+            self._row(section, self.tr("outside the geometry"))
+        for step in result.path:
+            cell = self.tr("cell {id}").format(id=step.cell)
+            if step.cell_name:
+                cell += f"  {step.cell_name}"
+            where = self.tr("universe {id}").format(id=step.universe)
+            if step.lattice is not None and step.lattice_index is not None:
+                index = ", ".join(str(i) for i in step.lattice_index)
+                where += " · " + self.tr("lattice {id} [{index}]").format(
+                    id=step.lattice, index=index
+                )
+            label = self.tr("level {level}: {cell}").format(level=step.level, cell=cell)
+            row = self._row(section, label, where)
+            row.setData(0, _SELECT, ("cell", step.cell))
+            row.setToolTip(0, "({:.6g}, {:.6g}, {:.6g}) cm".format(*step.local))
+            if step.overlapping:
+                cells = ", ".join(self.tr("cell {id}").format(id=c) for c in step.overlapping)
+                warning = self._row(row, self.tr("overlaps with"), cells)
+                warning.setIcon(0, icon("mdi6.alert-outline"))
+                row.setExpanded(True)
+        if result.found:
+            if result.material is None:
+                self._row(section, self.tr("Material"), self.tr("void"))
+            else:
+                name = f" {result.material_name}" if result.material_name else ""
+                value = self.tr("material {id}").format(id=result.material) + name
+                row = self._row(section, self.tr("Material"), value)
+                row.setData(0, _SELECT, ("material", result.material))
+            if result.density is not None:
+                self._row(section, self.tr("Density"), f"{result.density:.5g} g/cm³")
+            if result.temperature is not None:
+                self._row(section, self.tr("Temperature"), f"{result.temperature:g} K")
+            if result.instance is not None:
+                self._row(section, self.tr("Instance"), str(result.instance))
+        section.setExpanded(True)
+        self.tree.scrollToItem(section)
 
     # -- sections ----------------------------------------------------------------------
 
@@ -120,6 +215,9 @@ class InfoPanel(QWidget):
     def _sections(self) -> list[QTreeWidgetItem]:
         items = (self.tree.topLevelItem(i) for i in range(self.tree.topLevelItemCount()))
         return [item for item in items if item is not None]
+
+    def _section_item(self, key: str) -> QTreeWidgetItem | None:
+        return next((item for item in self._sections() if item.data(0, _NODE) == key), None)
 
     def _expanded_sections(self) -> set[str]:
         return {item.data(0, _NODE) for item in self._sections() if item.isExpanded()}
@@ -176,6 +274,8 @@ class InfoPanel(QWidget):
             elif mat.density is not None:
                 density = f"{mat.density:.4g} {mat.density_units}"
             item = self._row(section, f"{mat.id}  {mat.name}".rstrip(), density)
+            item.setData(0, _SELECT, ("material", mat.id))
+            item.setToolTip(0, self.tr("Double click to change the colour"))
             if mat.id in colors:
                 item.setIcon(0, swatch(colors[mat.id]))
             if mat.atom_density is not None:
@@ -272,6 +372,7 @@ class InfoPanel(QWidget):
         else:
             value = self.tr("distributed materials")
         item = self._row(parent, name, value)
+        item.setData(0, _SELECT, ("cell", cid))
         if cell.region:
             item.setToolTip(0, cell.region)
         if cell.fill_type == "universe" and cell.fill is not None:
@@ -289,7 +390,9 @@ class InfoPanel(QWidget):
         shape = "×".join(str(n) for n in lattice.shape)
         pitch = " × ".join(_number(p) for p in lattice.pitch)
         value = self.tr("{shape}, pitch {pitch} cm").format(shape=shape, pitch=pitch)
-        self._lazy(self._row(parent, name, value), "lattice", lid)
+        item = self._row(parent, name, value)
+        item.setData(0, _SELECT, ("universe", lid))
+        self._lazy(item, "lattice", lid)
 
     def _lazy(self, item: QTreeWidgetItem, kind: str, node_id: int) -> None:
         item.setData(0, _NODE, (kind, node_id))
@@ -316,10 +419,23 @@ class InfoPanel(QWidget):
                     self.tr("universe {id}").format(id=uid),
                     self.tr("{count} cells").format(count=count),
                 )
+                child.setData(0, _SELECT, ("universe", uid))
                 self._lazy(child, "universe", uid)
             if lattice.outer is not None:
                 child = self._row(item, self.tr("outer universe {id}").format(id=lattice.outer))
+                child.setData(0, _SELECT, ("universe", lattice.outer))
                 self._lazy(child, "universe", lattice.outer)
         item.setChildIndicatorPolicy(
             QTreeWidgetItem.ChildIndicatorPolicy.DontShowIndicatorWhenChildless
         )
+
+    # -- selection -------------------------------------------------------------------------
+
+    def _selected(self, current: QTreeWidgetItem | None, previous=None) -> None:
+        selection = current.data(0, _SELECT) if current is not None else None
+        self.highlightRequested.emit(tuple(selection) if selection else None)
+
+    def _double_clicked(self, item: QTreeWidgetItem, column: int) -> None:
+        selection = item.data(0, _SELECT)
+        if selection and selection[0] == "material":
+            self.colorEditRequested.emit("material", int(selection[1]))
