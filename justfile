@@ -5,6 +5,8 @@ set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-ExecutionPoli
 
 image     := "pyvised-backend"
 dev_image := image + ":dev"
+# folder with MCNP decks, outputs and xsdir for verify-rebuild (mounted at /decks)
+decks     := env_var_or_default("PYVISED_DECKS", parent_directory(justfile_directory()) / "mcnp-hw")
 
 # list the recipes
 default:
@@ -45,6 +47,12 @@ backend-build:
 backend-test:
     docker build -f backend/Dockerfile --target test -t {{image}}:test .
     docker run --rm {{image}}:test
+
+# check the model rebuilds against their MCNP decks: numbers, ID maps vs the MCNP adapter,
+# overlaps, materials (local only: models/rebuilds.json lists them; optional: one name)
+verify-rebuild name="":
+    docker build -f backend/Dockerfile --target test -t {{image}}:test .
+    docker run --rm -v "${PWD}\models:/models" -v "${PWD}\docs:/docs:ro" -v "{{decks}}:/decks:ro" {{image}}:test python -W ignore /models/verify_rebuild.py --manifest /models/rebuilds.json {{ if name == "" { "" } else { "--only " + name } }}
 
 # run the backend alone on http://127.0.0.1:8765 (token "dev"), reloading on code changes
 backend-dev:
