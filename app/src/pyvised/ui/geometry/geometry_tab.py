@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QColorDialog,
     QFileDialog,
     QFrame,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QMessageBox,
@@ -54,6 +55,7 @@ from ...render.structure import ModelStructure
 from ...render.views import SliceLayers
 from ..dialogs.text_dialog import TextDialog
 from ..empty_state import EmptyState
+from ..parameters_panel import ParametersPanel
 from .info_panel import InfoPanel
 from .legend import LegendEntry, LegendPanel, legend_pixmap
 from .view_panel import ViewPanel
@@ -141,10 +143,19 @@ class GeometryTab(QWidget):
         for panel in self.panels:
             self.views.addWidget(panel)
         self.side = QSplitter(Qt.Orientation.Vertical)
+        self.parameters = ParametersPanel()
+        self.parameters.applyRequested.connect(self._apply_parameters)
+        self.parameters_box = QGroupBox(self.tr("Builder parameters"))
+        box_layout = QVBoxLayout(self.parameters_box)
+        box_layout.setContentsMargins(6, 4, 6, 4)
+        box_layout.addWidget(self.parameters)
+        self.parameters_box.hide()
         self.side.addWidget(self.legend)
+        self.side.addWidget(self.parameters_box)
         self.side.addWidget(self.info_panel)
         self.side.setStretchFactor(0, 2)
-        self.side.setStretchFactor(1, 3)
+        self.side.setStretchFactor(1, 0)
+        self.side.setStretchFactor(2, 3)
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         self.splitter.addWidget(self.views)
         self.splitter.addWidget(self.side)
@@ -216,6 +227,8 @@ class GeometryTab(QWidget):
             saved = views[index] if index < len(views) else None
             panel.set_model(info, saved, keep=reloaded, default_basis=defaults[index])
         self.info_panel.set_model(info, self.tables.materials, self.language)
+        self.parameters.set_model(info, self.language)
+        self.parameters_box.setVisible(self.parameters.has_parameters)
         self.legend.select(self.selection)
         self._sync_cut_lines()
         self._update_legend()
@@ -295,6 +308,14 @@ class GeometryTab(QWidget):
         layers = self._layers()
         for panel in self.panels:
             panel.set_layers(layers)
+
+    def set_busy(self, busy: bool) -> None:
+        """The model is being opened: its parameters cannot be applied again meanwhile."""
+        self.parameters.set_busy(busy)
+
+    def _apply_parameters(self, params: dict[str, float]) -> None:
+        if self.session.path is not None:
+            self.session.open(self.session.path, params)
 
     def refresh_icon(self) -> None:
         self.empty.refresh_icon()
