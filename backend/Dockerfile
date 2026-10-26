@@ -53,6 +53,10 @@ ARG MAMBA_DOCKERFILE_ACTIVATE=1
 COPY --chown=$MAMBA_USER:$MAMBA_USER protocol/ /src/protocol/
 COPY --chown=$MAMBA_USER:$MAMBA_USER backend/ /src/backend/
 RUN pip install --no-cache-dir --no-deps /src/protocol /src/backend
+# the app version this image belongs to (its tag on ghcr.io); after the RUN steps, so a new
+# version does not invalidate their cache
+ARG VERSION=dev
+LABEL org.opencontainers.image.version="${VERSION}"
 EXPOSE 8765
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
     CMD ["/usr/local/bin/_entrypoint.sh", "python", "-m", "pyvised_backend", "healthcheck"]

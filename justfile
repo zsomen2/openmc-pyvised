@@ -5,6 +5,12 @@ set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-ExecutionPoli
 
 image     := "pyvised-backend"
 dev_image := image + ":dev"
+# the published image; the app pulls the tag of its own version
+registry  := "ghcr.io/zsomen2/pyvised-backend"
+# app, backend and protocol share one version (`just set-version`); tags are v<version>
+version   := `uv version --short --package pyvised`
+# Windows wants four numbers: 1.0.0rc1 -> 1.0.0.0
+numeric_version := replace_regex(version, '[^0-9.].*$', '') + ".0"
 # folder with MCNP decks, outputs and xsdir for verify-rebuild (mounted at /decks)
 decks     := env_var_or_default("PYVISED_DECKS", parent_directory(justfile_directory()) / "mcnp-hw")
 
@@ -39,9 +45,21 @@ typecheck:
 test: i18n-build
     $env:QT_QPA_PLATFORM = "offscreen"; uv run pytest
 
+# set the version of the app, backend and protocol, e.g. `just set-version 1.0.1`
+set-version new:
+    uv version {{new}} --package pyvised-protocol --no-sync
+    uv version {{new}} --package pyvised-backend --no-sync
+    uv version {{new}} --package pyvised
+
 # build the backend image (OpenMC 0.16.0 from conda-forge + the PyVised service)
 backend-build:
-    docker build -f backend/Dockerfile --target runtime -t {{dev_image}} .
+    docker build -f backend/Dockerfile --target runtime --build-arg VERSION={{version}} -t {{dev_image}} .
+
+# the offline image file dist/pyvised-backend-<version>.tar from the local build, tagged as the
+# release image so that "Load from file" accepts it (releases attach a gzipped one built by CI)
+backend-save: backend-build
+    docker tag {{dev_image}} {{registry}}:{{version}}
+    New-Item -ItemType Directory -Force dist | Out-Null; docker save -o dist/pyvised-backend-{{version}}.tar {{registry}}:{{version}}
 
 # run the backend and protocol tests inside the container, with real OpenMC
 backend-test:
@@ -73,3 +91,23 @@ i18n-build:
 # edit the Hungarian translation in Qt Linguist
 i18n-edit:
     uv run pyside6-linguist app/src/pyvised/i18n/pyvised_hu.ts
+
+# the app folder dist/PyVised (PyInstaller, one folder, no console), then its self-test
+build-exe: i18n-build
+    uv run --group build pyinstaller --noconfirm --clean --distpath dist --workpath build/pyinstaller packaging/pyvised.spec
+    just check-exe
+
+# self-test of a built or installed PyVised.exe, away from your settings and a running PyVised;
+# `just check-exe <exe> -Backend` checks Docker, the image and the backend too
+check-exe exe="dist/PyVised/PyVised.exe" *options:
+    ./packaging/check-exe.ps1 -Exe "{{exe}}" {{options}}; exit $LASTEXITCODE
+
+# install the newest dist/PyVised-Setup-*.exe silently for you, self-test it, uninstall it
+# (options: -Backend, -Keep)
+check-install *options:
+    ./installer/check-install.ps1 {{options}}
+
+# the installer dist/PyVised-Setup-<version>.exe (Inno Setup 6: winget install JRSoftware.InnoSetup)
+installer: build-exe
+    uv run python packaging/wizard_images.py build/installer
+    $iscc = @($env:ISCC, "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe") | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1; if (-not $iscc) { throw "Inno Setup 6 not found: winget install JRSoftware.InnoSetup" }; & $iscc /Qp "/DAppVersion={{version}}" "/DNumericVersion={{numeric_version}}" installer/pyvised.iss; exit $LASTEXITCODE

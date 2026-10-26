@@ -1,0 +1,68 @@
+# Checks on every push and pull request: the Windows app (lint, types, tests, the frozen exe and
+# the installer, installed and uninstalled silently) and the backend image with its tests
+# (real OpenMC in the container). The installer of each run is kept for 14 days for testing.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    paths-ignore: ["**.md", "LICENSE"]
+  pull_request:
+    paths-ignore: ["**.md", "LICENSE"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows app
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # only full version tags exist
+      - name: Install just
+        run: |
+          uv tool install rust-just
+          uv tool dir --bin | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+      - name: Environment
+        run: uv sync --all-packages
+      - name: Lint
+        run: just lint
+      - name: Types
+        run: just typecheck
+      - name: Tests
+        run: just test
+      - name: Exe and installer
+        run: just installer
+      - name: Silent install, self-test of the installed app, silent uninstall
+        run: ./installer/check-install.ps1
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installer
+          path: dist/PyVised-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  backend:
+    name: Backend image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Free disk space (the official OpenMC image used for its nuclear data is 7 GB)
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - uses: actions/checkout@v7
+      - name: Tests in the container
+        run: |
+          docker build -f backend/Dockerfile --target test -t pyvised-backend:test .
+          docker run --rm pyvised-backend:test
+      - name: Runtime image and its self-test
+        run: |
+          docker build -f backend/Dockerfile --target runtime -t pyvised-backend:ci .
+          docker run --rm --entrypoint /usr/local/bin/_entrypoint.sh pyvised-backend:ci \
+            python -m pyvised_backend selftest

@@ -5,7 +5,8 @@ with geometry visualisation and simulation controls, made for teaching Monte Car
 transport. OpenMC does not run natively on Windows, so PyVised starts and manages it in a
 Docker container in the background; you only see one window.
 
-**Status:** early development.
+**Status:** alpha (0.1.0a0), the first release for testing on lab PCs. Example models for the
+course tasks follow in a later version.
 
 - **Geometry:** open an OpenMC model and inspect it in two linked slice views coloured by
   material, cell, universe (at any nesting level), density, temperature or importance
@@ -56,9 +57,23 @@ Docker container in the background; you only see one window.
 
 ## Requirements
 
-- Windows 10 22H2 or Windows 11
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (free for education)
+- Windows 10 22H2 or Windows 11 23H2 or later, 64-bit
+- [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) (free for
+  education)
 - For development: [uv](https://docs.astral.sh/uv/) and [just](https://just.systems)
+
+## Installation
+
+1. Install Docker Desktop, start it once and accept its terms.
+2. Download `PyVised-Setup-<version>.exe` from the
+   [releases](https://github.com/zsomen2/openmc-pyvised/releases) and run it. It installs for
+   the current user; an administrator can install it for all users.
+3. At its first start PyVised downloads its OpenMC backend (about 1 GB, once per PC) and runs
+   a self-test. Its setup window shows each step and what to do when one fails.
+
+On a PC without internet access, download `pyvised-backend-<version>.tar.gz` from the same
+release and choose *Tools › Backend setup… › Load from file…*. Silent installation for lab
+PCs with a shared account: [installer/LAB_DEPLOYMENT.md](installer/LAB_DEPLOYMENT.md).
 
 ## Development
 
@@ -71,12 +86,31 @@ just backend-test    # backend tests inside the container (real OpenMC)
 just                 # list all commands
 ```
 
+Packaging (needs [Inno Setup 6](https://jrsoftware.org/isinfo.php):
+`winget install JRSoftware.InnoSetup`):
+
+```powershell
+just build-exe       # dist/PyVised: the app folder (PyInstaller), then its self-test
+just installer       # dist/PyVised-Setup-<version>.exe
+just check-install   # install it silently for you, self-test it, uninstall it
+just backend-save    # dist/pyvised-backend-<version>.tar: the offline image file
+```
+
+Releases: the app, backend and protocol share one version (`just set-version 1.0.1`). Pushing
+the tag `v<version>` runs `.github/workflows/release.yml`: it checks and builds everything,
+pushes `ghcr.io/zsomen2/pyvised-backend:<version>` and drafts a GitHub release with the
+installer, the offline image file and their checksums. The app downloads the image tag of
+its own version. The first push creates the image's package as private: make it public once
+(Package settings › Change visibility).
+
 Repository layout:
 
 - `app/` — the desktop client (PySide6)
 - `backend/` — the OpenMC service that runs inside the Docker container (FastAPI), and the
   `pyvised_course` helpers for course models
 - `protocol/` — schemas shared by both
+- `packaging/` — the PyInstaller spec; `installer/` — the Inno Setup script and the lab
+  deployment guide; `.github/workflows/` — CI and releases
 
 ## License
 

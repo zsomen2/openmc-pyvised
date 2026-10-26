@@ -1,6 +1,6 @@
 [project]
 name = "pyvised-backend"
-version = "0.1.0"
+version = "0.1.0a0"
 description = "OpenMC service of PyVised; runs inside the backend Docker container"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
