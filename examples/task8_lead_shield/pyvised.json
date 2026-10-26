@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "title": {
+    "en": "Lead-shielded gamma source",
+    "hu": "Ólommal árnyékolt gammaforrás"
+  },
+  "description": {
+    "en": "8. Create a spatially uniform gamma-ray source inside a water cylinder with a height of 2 cm and a diameter of 2 cm, following the approach in Task 2. The energy distribution is determined by 1 GBq Co-60 and 3 GBq Cs-137 present in the water.\n8.1. Surround the source with a cylindrical lead annulus. The annulus should have an inner diameter of 10 cm and a wall thickness of 2 cm.\n8.2. Calculate the photon flux on the outer lateral surface of the lead annulus.\n8.3. Instead of photon flux, determine the gamma dose rate averaged over the lateral surface.\n8.4. Increase the lead wall thickness through the following values: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20 cm. Perform the calculations with a fixed number of particles (for example, 1E7 initial photons).\n8.5. Observe how the gamma dose rate changes, along with the number of particles contributing to the tally and the tally's statistical uncertainty. Determine when a calculation with 1E7 initial photons becomes practically unusable.\n8.6. Divide the lead cylinder with a 20 cm wall thickness into 10 concentric cylindrical annuli, each 2 cm thick.\n8.7. Moving outward, double the importance value from one annulus to the next, then perform another calculation. Repeat the investigation with threefold and fourfold increases in importance as well.",
+    "hu": "8. Készítsünk térben egyenletes eloszlású gamma-sugárforrást egy 2 cm magas, 2 cm átmérőjű vízhengerben, a 2. feladat mintájára. Az energiaeloszlást a vízben lévő 1 GBq Co-60 és 3 GBq Cs-137 adja.\n8.1. Vegyük körül a forrást ólomból készült hengergyűrűvel. A gyűrű belső átmérője 10 cm, falvastagsága 2 cm legyen.\n8.2. Számítsuk ki a fotonfluxust az ólomgyűrű külső palástján.\n8.3. A fotonfluxus helyett határozzuk meg a palástfelületre átlagolt gamma-dózisteljesítményt.\n8.4. Növeljük az ólomfal vastagságát a következő értékek szerint: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20 cm. Végezzük el a számításokat rögzített részecskeszámmal (például 1E7 induló fotonnal).\n8.5. Figyeljük meg a gamma-dózisteljesítmény változását, valamint a tallyhoz hozzájáruló részecskék számát és a tally statisztikai szórását. Határozzuk meg, mikor válik gyakorlatilag használhatatlanná az 1E7 induló fotonnal végzett számítás.\n8.6. A 20 cm falvastagságú ólomhengert osszuk fel 10 darab, egyenként 2 cm vastag hengergyűrűre.\n8.7. Kifelé haladva növeljük a gyűrűk importance-értékét gyűrűnként kétszeresére, majd végezzünk új számítást. Ismételjük meg a vizsgálatot háromszoros és négyszeres importance-növeléssel is."
+  },
+  "material_colors": {
+    "1": "#4a90d9",
+    "2": "#6b6f7a"
+  },
+  "parameters": [
+    {
+      "name": "thickness",
+      "label": {
+        "en": "Lead wall thickness",
+        "hu": "Az ólomfal vastagsága"
+      },
+      "unit": "cm",
+      "default": 2.0,
+      "minimum": 2.0,
+      "maximum": 20.0,
+      "step": 2.0
+    },
+    {
+      "name": "importance_ratio",
+      "label": {
+        "en": "Importance ratio of neighbouring layers (1 = none)",
+        "hu": "Szomszédos rétegek importance-aránya (1 = nincs)"
+      },
+      "default": 1,
+      "minimum": 1,
+      "maximum": 4,
+      "step": 1
+    }
+  ],
+  "tallies": {
+    "2": {
+      "source_strength": 4551326000.0,
+      "divide_by": "area",
+      "divisor": "2*pi*(5+thickness)*10",
+      "unit": "1/(cm²·s)",
+      "note": "fm2 4.551e9: photons/s of 1 GBq Co-60 (1173 + 1332 keV) and 3 GBq Cs-137 (662 keV); OpenMC does not divide a surface flux by the area, 2·π·(5 + thickness)·10 cm² of the outer lead surface"
+    },
+    "12": {
+      "source_strength": 4551326000.0,
+      "divide_by": "area",
+      "divisor": "2*pi*(5+thickness)*10",
+      "multiplier": 0.0036,
+      "unit": "µSv/h",
+      "note": "ICRP-116 AP coefficients [pSv cm²] × 4.551e9 photons/s ÷ area × 3.6e-3 (pSv/s → µSv/h)"
+    }
+  },
+  "run_presets": [
+    {
+      "name": "quick",
+      "label": {
+        "en": "Quick look (10 × 100000 photons)",
+        "hu": "Gyors próba (10 × 100000 foton)"
+      },
+      "particles": 100000,
+      "batches": 10,
+      "note": {
+        "en": "1e6 photons; enough for thin walls only.",
+        "hu": "1e6 foton; csak vékony falhoz elegendő."
+      }
+    },
+    {
+      "name": "importance",
+      "label": {
+        "en": "8.6–8.7: 20 cm lead, importance ×2 (1e7 photons)",
+        "hu": "8.6–8.7: 20 cm ólom, importance ×2 (1e7 foton)"
+      },
+      "particles": 100000,
+      "batches": 100,
+      "params": {
+        "thickness": 20,
+        "importance_ratio": 2
+      },
+      "note": {
+        "en": "Ten 2 cm layers, each with twice the importance of the one inside it (weight windows). Try ratios 3 and 4 in the parameters too.",
+        "hu": "Tíz 2 cm-es réteg, mindegyik importance-a kétszerese a belsőnek (súlyablakok). Próbálja ki a 3-as és 4-es arányt is a paramétereknél."
+      }
+    }
+  ]
+}
