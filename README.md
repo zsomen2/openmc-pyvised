@@ -21,6 +21,13 @@ Docker container in the background; you only see one window.
   division by volume or area), plots chosen from the filters (spectra, mesh profiles and heat
   maps with cell outlines, bars), convergence from the statepoints, a run history with
   comparisons, and CSV/PNG/SVG export.
+- **Particle tracks:** track up to 2000 histories from the model's source, the converged
+  fission source or a point source, and play them back on both geometry views in event steps
+  or in time of flight: the particles at their births, collisions, surface crossings and ends,
+  optionally with their track lines, coloured by energy, particle type, event or history, over
+  a faded geometry. Filters by history, particle type and energy; only the part near each cut
+  plane if wanted; a followed history lists its events. In eigenvalue models a fission ends
+  the history, as in the simulation.
 
 ## Models
 
