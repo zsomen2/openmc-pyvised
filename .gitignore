@@ -12,6 +12,7 @@ docs/
 
 # Models
 models/
+examples/*/runs/
 
 # Python
 .venv/

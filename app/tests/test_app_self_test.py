@@ -29,6 +29,7 @@ def test_self_test_without_the_backend_passes(tmp_path: Path):
     code, report = run_self_test(tmp_path)
     assert code == 0, report
     assert "translations: pyvised_hu.qm loaded, qtbase_hu.qm loaded" in report
+    assert "[ OK ] examples: " in report
     assert "main window built in" in report
     assert "[SKIP] backend (--no-backend)" in report
     assert report.rstrip().endswith("RESULT: PASSED")

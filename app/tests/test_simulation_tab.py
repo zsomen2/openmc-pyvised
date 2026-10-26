@@ -238,6 +238,11 @@ def test_normalisation_is_saved_in_the_sidecar(qtbot, tab: SimulationTab):
     sidecar = tab.session.info.sidecar
     assert sidecar is not None and sidecar.tallies[2].multiplier == 2.0
     assert sidecar.tallies[2].divisor == pytest.approx(1.25e5)
+    panel.divisor.setText("2*pi*r*h")
+    assert panel.value().divisor == "2*pi*r*h"
+    panel.divisor.setText("2*pi*r*")
+    with pytest.raises(ValueError):
+        panel.value()
     panel.remove.click()
     assert 2 not in tab.session.info.sidecar.tallies  # type: ignore[union-attr]
 

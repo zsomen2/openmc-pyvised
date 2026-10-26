@@ -36,8 +36,10 @@ from pyvised_protocol.schemas import ModelInfo, SelfTestResult, WeightWindowLaye
 from .. import REPOSITORY_URL, __version__
 from ..backend.client import ApiClient
 from ..backend.manager import IMAGE_ENV, BackendConfig, BackendManager, BackendState
+from ..core.examples import CopyState, Example, find_examples
 from ..core.icons import icon
 from ..core.model_session import MODEL_SUFFIXES, ModelSession
+from ..core.paths import examples_dir
 from ..core.run_session import RunSession
 from ..core.settings import AppSettings, ReloadPolicy
 from ..core.tasks import TaskRunner
@@ -107,6 +109,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.simulation_tab, self.tr("Simulation"))
         self.setCentralWidget(self.tabs)
 
+        self.examples, _problems = find_examples(examples_dir())
         self._create_actions()
         self._create_menus()
         self._create_toolbar()
@@ -247,6 +250,13 @@ class MainWindow(QMainWindow):
         view.addSeparator()
         view.addAction(self.act_reset_views)
         tools = bar.addMenu(self.tr("&Tools"))
+        self.examples_menu = tools.addMenu(self.tr("&Examples"))
+        for example in self.examples:
+            title = example.title(self.language).replace("&", "&&")
+            action = self.examples_menu.addAction(f"{example.number}. {title}")
+            action.triggered.connect(lambda checked, e=example: self.open_example(e))
+        if not self.examples:
+            self.examples_menu.addAction(self.tr("No examples found")).setEnabled(False)
         tools.addAction(self.act_tracks)
         tools.addSeparator()
         tools.addAction(self.act_setup)
@@ -344,6 +354,7 @@ class MainWindow(QMainWindow):
         self.tabs.setTabIcon(1, icon("mdi6.chart-bell-curve-cumulative"))
         self.act_libraries.setIcon(icon("mdi6.database-outline"))
         self.act_tracks.setIcon(icon("mdi6.atom-variant"))
+        self.examples_menu.setIcon(icon("mdi6.school-outline"))
         if self.tracks_window is not None:
             self.tracks_window.refresh_icons()
         self.geometry_tab.refresh_icon()
@@ -474,6 +485,50 @@ class MainWindow(QMainWindow):
             self.session.open(path)
         else:
             self._pending_open = path
+
+    def open_example(self, example: Example) -> None:
+        """Open the workspace copy of an example; copy it there first if needed."""
+        workspace = self.backend.config.workspace
+        state = example.copy_state(workspace)
+        restore = state is CopyState.MISSING
+        if state is CopyState.CHANGED:
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Icon.Question)
+            box.setWindowTitle(self.tr("Examples"))
+            text = self.tr("Your workspace already has a changed copy of the example “{title}”.")
+            box.setText(text.format(title=example.title(self.language)))
+            box.setInformativeText(
+                self.tr(
+                    "Open your copy, or replace its files with the original? The runs of "
+                    "your copy are kept either way."
+                )
+            )
+            own = box.addButton(self.tr("Open my copy"), QMessageBox.ButtonRole.AcceptRole)
+            original = box.addButton(
+                self.tr("Restore the original"), QMessageBox.ButtonRole.DestructiveRole
+            )
+            box.addButton(QMessageBox.StandardButton.Cancel)
+            box.setDefaultButton(own)
+            box.exec()
+            if box.clickedButton() not in (own, original):
+                return
+            restore = box.clickedButton() is original
+        path = example.copy_model(workspace)
+        if restore:
+            try:
+                path = example.copy_to(workspace)
+            except OSError as exc:
+                log.warning("copying example %s failed: %s", example.folder.name, exc)
+                QMessageBox.warning(
+                    self,
+                    self.tr("Examples"),
+                    self.tr("The example could not be copied into the workspace: {error}").format(
+                        error=exc
+                    ),
+                )
+                return
+            self.session.accept_file_changes()
+        self.request_open(path)
 
     def reload_model(self) -> None:
         if self.session.path is not None and self.session.ready:

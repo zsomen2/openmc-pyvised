@@ -343,7 +343,13 @@ class InfoPanel(QWidget):
             norm = normalised.get(tally.id)
             if norm is not None:
                 text = f"× {norm.source_strength:g} × {norm.multiplier:g}"
-                if norm.divide_by != "none" and norm.divisor:
+                if norm.divide_by != "none" and isinstance(norm.divisor, str):
+                    try:
+                        value = f" = {norm.divisor_value(info.params):g}"
+                    except ValueError:
+                        value = ""
+                    text += f" / ({norm.divisor}{value})"
+                elif norm.divide_by != "none" and norm.divisor:
                     text += f" / {norm.divisor:g}"
                 if norm.unit:
                     text += f" → {norm.unit}"

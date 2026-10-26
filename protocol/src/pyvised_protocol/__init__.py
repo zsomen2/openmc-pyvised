@@ -2,7 +2,7 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
-PROTOCOL_VERSION = 5
+PROTOCOL_VERSION = 6
 """Raised on every incompatible API change; client and backend must report the same value."""
 
 API_PREFIX = "/api/v1"

@@ -68,6 +68,10 @@ def test_normalisation_factor():
     assert tm.factor(norm) == pytest.approx(1.0e15 * 3.6e-3 / 1.25e5)
     no_divisor = TallyNormalisation(source_strength=2.0, divide_by="volume", multiplier=3.0)
     assert tm.factor(no_divisor) == 6.0
+    sphere = TallyNormalisation(source_strength=1.0e6, divide_by="area", divisor="4*pi*r**2")
+    assert tm.factor(sphere, {"r": 2.0}) == pytest.approx(1.0e6 / (16 * math.pi))
+    assert math.isnan(tm.factor(sphere, {})), "a run without the parameter"
+    assert tm.factor(sphere.model_copy(update={"divide_by": "none"})) == 1.0e6
 
 
 def test_bin_labels():

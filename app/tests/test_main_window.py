@@ -135,6 +135,29 @@ def test_a_model_requested_early_opens_when_the_backend_is_ready(
     assert window.geometry_tab.stack.currentIndex() == 1
 
 
+def test_examples_open_as_copies_in_the_workspace(window: MainWindow, monkeypatch, tmp_path: Path):
+    actions = window.examples_menu.actions()
+    assert actions[0].text() == "1. Iron sphere with a point source"
+    example = window.examples[0]
+    copy = tmp_path / "examples" / example.folder.name / example.model.name
+    actions[0].trigger()
+    assert copy.is_file() and window._pending_open == copy, "opens once the backend is ready"
+
+    copy.write_text("# changed\n", encoding="utf-8")
+    choice = {"text": "Open my copy"}
+
+    def answer(box: QMessageBox) -> int:
+        next(b for b in box.buttons() if b.text() == choice["text"]).click()
+        return 0
+
+    monkeypatch.setattr(QMessageBox, "exec", answer)
+    actions[0].trigger()
+    assert copy.read_text(encoding="utf-8") == "# changed\n"
+    choice["text"] = "Restore the original"
+    actions[0].trigger()
+    assert copy.read_bytes() == example.model.read_bytes()
+
+
 def test_colour_mode_controls_stay_in_sync(window: MainWindow):
     window.set_color_mode(ColorMode.CELL)
     assert window.color_combo.currentData() == "cell"

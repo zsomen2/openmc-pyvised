@@ -382,7 +382,7 @@ class TallyPlots(QWidget):
         norm = self.sidecar.tallies.get(tid) if self.sidecar and tid is not None else None
         if not self.normalised.isChecked() or norm is None:
             return 1.0, ""
-        return tm.factor(norm), norm.unit
+        return tm.factor(norm, self.run.params if self.run is not None else None), norm.unit
 
     # -- drawing --------------------------------------------------------------------------------
 
