@@ -5,8 +5,8 @@ with geometry visualisation and simulation controls, made for teaching Monte Car
 transport. OpenMC does not run natively on Windows, so PyVised starts and manages it in a
 Docker container in the background; you only see one window.
 
-**Status:** alpha (0.1.0a0), the first release for testing on lab PCs. Example models of the
-course tasks (Tools › Examples) are being added one by one.
+**Status:** 1.0.1, the first release with all the main features. Example models of the course
+tasks (Tools › Examples) are being added one by one.
 
 - **Geometry:** open an OpenMC model and inspect it in two linked slice views coloured by
   material, cell, universe (at any nesting level), density, temperature or importance
@@ -29,6 +29,11 @@ course tasks (Tools › Examples) are being added one by one.
   a faded geometry. Filters by history, particle type and energy; only the part near each cut
   plane if wanted; a followed history lists its events. In eigenvalue models a fission ends
   the history, as in the simulation.
+- **Input:** read the model's own code without leaving the app: the builder or notebook and
+  the other `.py`/`.ipynb` files of its folder, with line numbers, Python colours, notebooks
+  shown as their cells, find and go to line. It follows edits made in any editor ("Open in
+  editor" takes VS Code or Notepad, so a builder never runs by accident), and for a run it
+  shows the copy of the code that run used.
 
 ## Models
 
@@ -47,7 +52,8 @@ course tasks (Tools › Examples) are being added one by one.
   (default 0.5).
 - Runs live next to the model in `runs/<date-time>[_label]/`: the patched copy of the
   exported model (the source is never changed), OpenMC's output and statepoints,
-  `pyvised_run.json` and `pyvised_results.json`.
+  `pyvised_run.json` and `pyvised_results.json`, and in `input/` a copy of the model's
+  `.py`/`.ipynb` files as they were when the run started.
 - Builders may use `pyvised_course`, a helper module in the backend image for models that
   mirror an MCNP deck: `lat=1` lattices, `TR`/`*TR` transformations and `trcl`, densities as
   written on cell cards, and cell importances as weight windows.

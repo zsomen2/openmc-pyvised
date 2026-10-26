@@ -1,6 +1,6 @@
 [project]
 name = "pyvised-protocol"
-version = "0.1.0a0"
+version = "1.0.1"
 description = "Schemas and binary frames shared by the PyVised client and backend"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
