@@ -46,6 +46,7 @@ def tab(qtbot, settings, monkeypatch, tmp_path: Path):
     runs = RunSession(tasks)
     runs.set_connection(Connection("http://127.0.0.1:1", "t"))
     widget = SimulationTab(session, runs, settings)  # type: ignore[arg-type]
+    session.setParent(widget)  # its queued answers go with the widget
     qtbot.addWidget(widget)
     widget.resize(1500, 900)
     widget.show()

@@ -20,6 +20,7 @@ from pyvised_protocol.tracks import TrackRequest
 def tab(qtbot, settings):
     settings.plot_background = PlotBackground.WHITE
     widget = GeometryTab(FakeSession(), settings)  # type: ignore[arg-type]
+    widget.session.setParent(widget)  # type: ignore[attr-defined]
     qtbot.addWidget(widget)
     widget.resize(1400, 800)
     widget.show()

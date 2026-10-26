@@ -87,7 +87,12 @@ def synthetic_slice(request: SliceRequest) -> SliceData:
 
 
 class FakeSession(QObject):
-    """Stands in for `ModelSession` in the views: answers slice requests asynchronously."""
+    """Stands in for `ModelSession` in the views: answers slice requests asynchronously.
+
+    Answers come while the session exists: the fixtures make it a child of the widget under
+    test, so answers still queued when a test ends go with the widget instead of reaching
+    the deleted views in the next test.
+    """
 
     def __init__(self, folder: Path | None = None) -> None:
         super().__init__()
@@ -102,9 +107,9 @@ class FakeSession(QObject):
     def request_slice(self, request, on_result, on_error) -> bool:
         self.requests.append(request)
         if self.fail:
-            QTimer.singleShot(0, lambda: on_error(RuntimeError("worker died")))
+            QTimer.singleShot(0, self, lambda: on_error(RuntimeError("worker died")))
         else:
-            QTimer.singleShot(0, lambda: on_result(synthetic_slice(request)))
+            QTimer.singleShot(0, self, lambda: on_result(synthetic_slice(request)))
         return True
 
     def inspect(self, point, on_result, on_error) -> bool:
@@ -117,7 +122,7 @@ class FakeSession(QObject):
             material_name="fuel",
             density=10.0,
         )
-        QTimer.singleShot(0, lambda: on_result(result))
+        QTimer.singleShot(0, self, lambda: on_result(result))
         return True
 
     def update_sidecar(self, changes) -> None:

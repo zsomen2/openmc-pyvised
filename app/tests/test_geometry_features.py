@@ -21,6 +21,7 @@ def tab(qtbot, settings, tmp_path: Path):
     settings.plot_background = PlotBackground.WHITE
     session = FakeSession(tmp_path)
     widget = GeometryTab(session, settings)  # type: ignore[arg-type]
+    session.setParent(widget)  # its queued answers go with the widget
     qtbot.addWidget(widget)
     widget.resize(1400, 800)
     widget.show()
