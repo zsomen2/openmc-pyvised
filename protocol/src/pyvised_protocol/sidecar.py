@@ -64,6 +64,8 @@ class SavedView(BaseModel):
 
 
 class ReferenceResult(BaseModel):
+    """A result to compare runs with: k-eff (no `tally`) or a normalised tally total."""
+
     name: str
     value: float
     std: float | None = None
@@ -71,6 +73,35 @@ class ReferenceResult(BaseModel):
     unit: str = ""
     tally: int | None = None
     source: str = ""
+    params: dict[str, float] = Field(default_factory=dict)
+    """Builder parameters the reference belongs to; a run matches when it has these values
+    (parameters missing here may have any value)."""
+    tolerance: float | None = Field(default=None, gt=0)
+    """Agreed largest difference (k-eff: absolute, tallies: relative); the app judges by it
+    instead of two standard deviations."""
+
+    def matches(self, params: dict[str, float]) -> bool:
+        return all(
+            name in params and abs(params[name] - value) <= 1e-9 * max(1.0, abs(value))
+            for name, value in self.params.items()
+        )
+
+
+class RunPreset(BaseModel):
+    """Run settings a model suggests in the Simulation tab (None keeps the model's value)."""
+
+    name: str
+    label: LocalizedText = Field(default_factory=LocalizedText)
+    particles: int | None = Field(default=None, gt=0)
+    batches: int | None = Field(default=None, gt=0)
+    inactive: int | None = Field(default=None, ge=0)
+    time_limit: float | None = Field(default=None, gt=0)
+    """[s] of wall time."""
+    keff_std: float | None = Field(default=None, gt=0)
+    """Stop once σ(k-eff) is this small."""
+    params: dict[str, float] = Field(default_factory=dict)
+    """Builder parameters the preset sets as well."""
+    note: LocalizedText = Field(default_factory=LocalizedText)
 
 
 class Sidecar(BaseModel):
@@ -91,6 +122,7 @@ class Sidecar(BaseModel):
     """Weight-window lower bound that stands for importance 1: the importance colour mode
     shows this / lower bound (MCNP-style rebuilds use lower bound 0.5/imp)."""
     parameters: list[ParameterSpec] = Field(default_factory=list)
+    run_presets: list[RunPreset] = Field(default_factory=list)
 
     def parameter_defaults(self) -> dict[str, float]:
         return {p.name: p.default for p in self.parameters}
