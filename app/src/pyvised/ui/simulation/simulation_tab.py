@@ -50,6 +50,8 @@ MIN_FORM_WIDTH = 330
 
 class SimulationTab(QWidget):
     statusMessage = Signal(str)
+    runSelected = Signal(object)
+    """Id of the shown run (str), or None."""
 
     def __init__(
         self,
@@ -164,9 +166,12 @@ class SimulationTab(QWidget):
     def show_model(self, info: ModelInfo | None) -> None:
         source = info.source if info is not None else None
         if self.info is None or self.info.source != source:  # another model: its own runs
+            selected = self.selected
             self.selected, self.results, self._pinned = None, None, False
             self._comparing = []
             self.log.clear()
+            if selected is not None:
+                self.runSelected.emit(None)
         self.info = info
         self.stack.setCurrentIndex(0 if info is None else 1)
         self.form.set_model(info, self.language)
@@ -335,6 +340,7 @@ class SimulationTab(QWidget):
             self.results = None
             self.log.clear()
             self.history.select_run(run_id)
+            self.runSelected.emit(run_id)
         self.results = self.runs.cached_results(run_id) if self.results is None else self.results
         self._show_selected()
         if run is None:
@@ -495,6 +501,7 @@ class SimulationTab(QWidget):
             self.selected, self.results = None, None
             self._show_selected()
             self.log.clear()
+            self.runSelected.emit(None)
         self.runs.delete(run_id)
 
     # -- tallies --------------------------------------------------------------------------------

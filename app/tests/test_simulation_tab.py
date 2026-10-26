@@ -380,3 +380,16 @@ def test_a_history_refresh_keeps_the_result_views(qtbot, tab: SimulationTab):
         tab.runs.refresh_history()
     assert tab.plots.kind.currentIndex() == 1 and tab.plots.data is not None
     assert tab.tallies.normalisation.multiplier.text() == "7"
+
+
+def test_the_shown_run_is_announced(qtbot, tab: SimulationTab, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+
+    qtbot.waitUntil(lambda: tab.selected == "run2")
+    shown: list[str | None] = []
+    tab.runSelected.connect(shown.append)
+    tab.select("run1", pinned=True)
+    tab.select("run1", pinned=True)
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Yes)
+    tab.delete_run("run1")
+    assert shown == ["run1", None]

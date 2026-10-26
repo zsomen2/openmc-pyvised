@@ -1,4 +1,4 @@
-"""The main window: Geometry and Simulation tabs, menus, toolbar and the backend status."""
+"""The main window: Geometry, Simulation and Input tabs, menus, toolbar and the backend status."""
 
 import itertools
 import logging
@@ -53,6 +53,7 @@ from .dialogs.settings_dialog import SettingsDialog
 from .dialogs.setup_dialog import SetupDialog, Status
 from .dialogs.text_dialog import TextDialog
 from .geometry.geometry_tab import GeometryTab
+from .input.input_tab import InputTab
 from .simulation.simulation_tab import SimulationTab
 from .status_pill import StatusPill
 from .tracks.tracks_window import TracksWindow
@@ -103,10 +104,13 @@ class MainWindow(QMainWindow):
         self.simulation_tab = SimulationTab(
             self.session, self.runs, settings, language=self.language
         )
+        self.input_tab = InputTab(self.session, settings)
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
         self.tabs.addTab(self.geometry_tab, self.tr("Geometry"))
         self.tabs.addTab(self.simulation_tab, self.tr("Simulation"))
+        self.tabs.addTab(self.input_tab, self.tr("Input"))
+        self.tabs.currentChanged.connect(self._tab_changed)
         self.setCentralWidget(self.tabs)
 
         self.examples, _problems = find_examples(examples_dir())
@@ -141,6 +145,8 @@ class MainWindow(QMainWindow):
         self.simulation_tab.statusMessage.connect(
             lambda text: self.statusBar().showMessage(text, 8000)
         )
+        self.simulation_tab.runSelected.connect(self._run_selected)
+        self.input_tab.statusMessage.connect(lambda text: self.statusBar().showMessage(text, 6000))
 
         backend.stateChanged.connect(self._on_backend_state)
         backend.transferChanged.connect(self.status_pill.set_transfer)
@@ -352,6 +358,7 @@ class MainWindow(QMainWindow):
         self.act_restart.setIcon(icon("mdi6.restart"))
         self.tabs.setTabIcon(0, icon("mdi6.cube-outline"))
         self.tabs.setTabIcon(1, icon("mdi6.chart-bell-curve-cumulative"))
+        self.tabs.setTabIcon(2, icon("mdi6.file-code-outline"))
         self.act_libraries.setIcon(icon("mdi6.database-outline"))
         self.act_tracks.setIcon(icon("mdi6.atom-variant"))
         self.examples_menu.setIcon(icon("mdi6.school-outline"))
@@ -359,6 +366,7 @@ class MainWindow(QMainWindow):
             self.tracks_window.refresh_icons()
         self.geometry_tab.refresh_icon()
         self.simulation_tab.refresh_icons()
+        self.input_tab.refresh_icons()
 
     def _restore_window(self) -> None:
         geometry = self.settings.window_geometry
@@ -371,6 +379,7 @@ class MainWindow(QMainWindow):
             self.restoreState(state)
         self.geometry_tab.restore_state(self.settings.geometry_splitter)
         self.simulation_tab.restore_state(self.settings.simulation_splitter)
+        self.input_tab.restore_state(self.settings.input_splitter)
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
@@ -390,6 +399,7 @@ class MainWindow(QMainWindow):
         self.settings.window_state = self.saveState()
         self.settings.geometry_splitter = self.geometry_tab.save_state()
         self.settings.simulation_splitter = self.simulation_tab.save_state()
+        self.settings.input_splitter = self.input_tab.save_state()
         if self.tracks_window is not None:
             self.settings.tracks_window = self.tracks_window.saveGeometry()
         self.settings.sync()
@@ -658,6 +668,7 @@ class MainWindow(QMainWindow):
         self.simulation_tab.set_busy(False)
         self.geometry_tab.show_model(info, reloaded)
         self.simulation_tab.show_model(info)
+        self.input_tab.show_model(self.session.path)
         if self.tracks_window is not None:
             self.tracks_window.set_model(info)
         self._fill_mode_controls(info)
@@ -686,6 +697,16 @@ class MainWindow(QMainWindow):
             box.setDetailedText(detail)
             box.setInformativeText(detail.strip().splitlines()[-1][:300])
         box.exec()
+
+    def _run_selected(self, run_id: str | None) -> None:
+        """The run shown in the Simulation tab: the Input tab lists the code it kept."""
+        run = self.simulation_tab.run_info(run_id)
+        folder = self.simulation_tab.run_folder(run_id) if run_id is not None else None
+        self.input_tab.set_run(run, folder)
+
+    def _tab_changed(self, index: int) -> None:
+        if self.tabs.widget(index) is self.input_tab:
+            self.input_tab.focus_code()
 
     def _model_files_changed(self) -> None:
         policy = self.settings.reload_on_change
