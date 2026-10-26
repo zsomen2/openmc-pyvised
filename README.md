@@ -5,11 +5,22 @@ with geometry visualisation and simulation controls, made for teaching Monte Car
 transport. OpenMC does not run natively on Windows, so PyVised starts and manages it in a
 Docker container in the background; you only see one window.
 
-**Status:** early development. The geometry viewer works: open an OpenMC model and inspect
-it in two linked slice views coloured by material, cell, universe (at any nesting level),
-density, temperature or importance (weight windows), with a legend, highlighting, region
-labels, an overlap count, a point inspector that shows the full nesting path, and PNG or
-`.npz` export. Simulation controls come next.
+**Status:** early development.
+
+- **Geometry:** open an OpenMC model and inspect it in two linked slice views coloured by
+  material, cell, universe (at any nesting level), density, temperature or importance
+  (weight windows), with a legend, highlighting, region labels, an overlap count, a point
+  inspector that shows the full nesting path, and PNG or `.npz` export. Builder parameters
+  (e.g. rod positions) can be edited; the model is exported again and redrawn.
+- **Simulation:** run the model with its own settings or a preset, with a thread count, a
+  nuclear-data library, a time limit and σ(k-eff) or tally relative-error targets. The run
+  shows k per generation, the running mean ± σ and the Shannon entropy live; Stop or the
+  time limit keeps the latest statepoint. Results: k-eff and its estimators, reactivity (in
+  $ with the model's β_eff), comparison with reference results, tally tables with relative
+  errors coloured by MCNP's guideline and the figure of merit, normalisation (MCNP's `fm`,
+  division by volume or area), plots chosen from the filters (spectra, mesh profiles and heat
+  maps with cell outlines, bars), convergence from the statepoints, a run history with
+  comparisons, and CSV/PNG/SVG export.
 
 ## Models
 
@@ -22,12 +33,19 @@ labels, an overlap count, a point inspector that shows the full nesting path, an
   parameters arrive as JSON in `PYVISED_PARAMS`.
 - An optional `pyvised.json` next to the model adds a title and description in English and
   Hungarian, the initial views, colours (the app saves the colours you choose there), tally
-  normalisation, builder parameters and the weight-window lower bound that stands for
-  importance 1 (default 0.5).
+  normalisation, builder parameters, run presets, reference results (optionally for given
+  parameter values), β_eff and the weight-window lower bound that stands for importance 1
+  (default 0.5).
+- Runs live next to the model in `runs/<date-time>[_label]/`: the patched copy of the
+  exported model (the source is never changed), OpenMC's output and statepoints,
+  `pyvised_run.json` and `pyvised_results.json`.
 - Builders may use `pyvised_course`, a helper module in the backend image for models that
   mirror an MCNP deck: `lat=1` lattices, `TR`/`*TR` transformations and `trcl`, densities as
   written on cell cards, and cell importances as weight windows.
 - PyVised watches the model's folder and offers to reload it when a file changes.
+- Besides the built-in ENDF/B-VII.1 library, folders with a `cross_sections.xml` (for example
+  a library from [openmc.org](https://openmc.org/data)) can be added in Settings › Backend;
+  they are mounted read-only into the container.
 
 ## Requirements
 
