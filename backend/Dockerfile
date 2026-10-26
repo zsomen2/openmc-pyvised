@@ -10,12 +10,8 @@ ARG DATA_IMAGE=openmc/openmc:v0.16.0
 
 FROM ${DATA_IMAGE} AS data
 
-FROM ${MICROMAMBA_IMAGE} AS runtime
-LABEL org.opencontainers.image.title="PyVised backend" \
-      org.opencontainers.image.description="OpenMC service of the PyVised desktop app" \
-      org.opencontainers.image.source="https://github.com/zsomen2/openmc-pyvised" \
-      org.opencontainers.image.licenses="GPL-3.0-or-later"
-
+# OpenMC, Python and the nuclear data; shared by the runtime and test images
+FROM ${MICROMAMBA_IMAGE} AS base
 COPY --chown=$MAMBA_USER:$MAMBA_USER backend/environment.yml /tmp/environment.yml
 RUN micromamba install --yes --name base --file /tmp/environment.yml \
  && micromamba clean --all --yes
@@ -27,26 +23,37 @@ ENV OPENMC_CROSS_SECTIONS=/opt/nuclear-data/endfb-vii.1/cross_sections.xml \
     HDF5_USE_FILE_LOCKING=FALSE \
     PYVISED_WORKSPACE=/workspace
 
+USER root
+RUN mkdir -p /workspace /data/custom && chown $MAMBA_USER:$MAMBA_USER /workspace
+USER $MAMBA_USER
+WORKDIR /workspace
+
+# development only: test tools + the MCNP converter used to check the model rebuilds,
+# installed before the sources so that code changes do not reinstall them
+FROM base AS test
+ARG MAMBA_DOCKERFILE_ACTIVATE=1
+ARG MCNP_ADAPTER_REF=80fda5abeed22502e2f6e19e57a9b2a8762844a8
+RUN micromamba install --yes --name base --channel conda-forge pytest httpx \
+ && micromamba clean --all --yes \
+ && pip install --no-cache-dir \
+    "https://github.com/openmc-dev/openmc_mcnp_adapter/archive/${MCNP_ADAPTER_REF}.zip"
+COPY --chown=$MAMBA_USER:$MAMBA_USER protocol/ /src/protocol/
+COPY --chown=$MAMBA_USER:$MAMBA_USER backend/ /src/backend/
+RUN pip install --no-cache-dir --no-deps /src/protocol /src/backend
+ENTRYPOINT ["/usr/local/bin/_entrypoint.sh"]
+CMD ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "/src/protocol/tests", "/src/backend/tests"]
+
+FROM base AS runtime
+LABEL org.opencontainers.image.title="PyVised backend" \
+      org.opencontainers.image.description="OpenMC service of the PyVised desktop app" \
+      org.opencontainers.image.source="https://github.com/zsomen2/openmc-pyvised" \
+      org.opencontainers.image.licenses="GPL-3.0-or-later"
 # run the following RUN steps inside the activated conda environment
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
 COPY --chown=$MAMBA_USER:$MAMBA_USER protocol/ /src/protocol/
 COPY --chown=$MAMBA_USER:$MAMBA_USER backend/ /src/backend/
 RUN pip install --no-cache-dir --no-deps /src/protocol /src/backend
-
-USER root
-RUN mkdir -p /workspace /data/custom && chown $MAMBA_USER:$MAMBA_USER /workspace
-USER $MAMBA_USER
-WORKDIR /workspace
 EXPOSE 8765
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
     CMD ["/usr/local/bin/_entrypoint.sh", "python", "-m", "pyvised_backend", "healthcheck"]
 ENTRYPOINT ["/usr/local/bin/_entrypoint.sh", "python", "-m", "pyvised_backend", "serve", "--host", "0.0.0.0", "--port", "8765"]
-
-# development only: test tools + the MCNP converter used to check the model rebuilds
-FROM runtime AS test
-ARG MCNP_ADAPTER_REF=80fda5abeed22502e2f6e19e57a9b2a8762844a8
-RUN micromamba install --yes --name base --channel conda-forge pytest httpx \
- && micromamba clean --all --yes \
- && pip install --no-cache-dir "https://github.com/openmc-dev/openmc_mcnp_adapter/archive/${MCNP_ADAPTER_REF}.zip"
-ENTRYPOINT ["/usr/local/bin/_entrypoint.sh"]
-CMD ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "/src/protocol/tests", "/src/backend/tests"]

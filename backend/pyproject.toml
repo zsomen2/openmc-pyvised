@@ -18,6 +18,10 @@ pyvised-backend = "pyvised_backend.__main__:main"
 [tool.uv.sources]
 pyvised-protocol = { workspace = true }
 
+# pyvised_course: helpers for course models (MCNP-style rebuilds), importable by builders
+[tool.uv.build-backend]
+module-name = ["pyvised_backend", "pyvised_course"]
+
 [build-system]
 requires = ["uv_build>=0.12,<0.13"]
 build-backend = "uv_build"
