@@ -202,7 +202,11 @@ class WeightWindowInfo(BaseModel):
 
 
 class ModelInfo(BaseModel):
-    """Everything the client shows about an opened model (`POST /models/open`)."""
+    """Everything the client shows about an opened model (`POST /models/open`).
+
+    Universe levels count the coordinate levels of OpenMC: 0 holds the root
+    universe's cells, and every fill (a universe or a lattice element) adds one.
+    """
 
     model_id: str
     source: str
@@ -215,6 +219,8 @@ class ModelInfo(BaseModel):
     build_seconds: float = 0.0
     bounding_box: BoundingBox
     root_universe: int
+    max_level: int = 0
+    """Deepest universe level that holds cells."""
     materials: list[MaterialInfo] = Field(default_factory=list)
     cells: list[CellInfo] = Field(default_factory=list)
     universes: list[UniverseInfo] = Field(default_factory=list)
@@ -225,8 +231,20 @@ class ModelInfo(BaseModel):
     weight_windows: list[WeightWindowInfo] = Field(default_factory=list)
 
 
+class WeightWindowLayer(BaseModel):
+    """Which weight windows the importance layer of a slice samples."""
+
+    particle: str = "neutron"
+    energy: float | None = None
+    """Energy [eV] that picks each window set's group; None = the first group."""
+
+
 class SliceRequest(BaseModel):
-    """Body of `POST /models/{id}/slice`; the answer is a slice frame (see `slices`)."""
+    """Body of `POST /models/{id}/slice`; the answer is a slice frame (see `slices`).
+
+    The cell, instance and material maps always hold the deepest cells; the
+    optional layers add maps next to them.
+    """
 
     basis: Basis = "xy"
     origin: tuple[float, float, float]
@@ -235,8 +253,44 @@ class SliceRequest(BaseModel):
     """Extent along the horizontal and vertical axis [cm]."""
     pixels: tuple[PixelCount, PixelCount]
     """Number of pixels along the horizontal and vertical axis."""
-    level: int | None = None
-    """Universe level; None = the deepest cells."""
     show_overlaps: bool = True
+    level: Annotated[int, Field(ge=0)] | None = None
+    """Also return the cells and instances at this universe level (`level_cells`,
+    `level_instances`; -2 where the geometry is not nested that deep)."""
     properties: bool = False
-    """Also return temperature and `Cell.density` per pixel."""
+    """Also return the temperature per pixel (plot mode has no usable densities)."""
+    weight_windows: WeightWindowLayer | None = None
+    """Also return the weight-window lower bound per pixel (`ww_lower`, NaN without one)."""
+
+
+class PathStep(BaseModel):
+    """One level of the nesting path at a point: the cell found in a universe."""
+
+    level: int
+    universe: int
+    cell: int
+    cell_name: str = ""
+    local: tuple[float, float, float]
+    """The point in this universe's coordinates [cm]."""
+    lattice: int | None = None
+    """Lattice filling the cell, and the element the point lies in."""
+    lattice_index: list[int] | None = None
+    overlapping: list[int] = Field(default_factory=list)
+    """Other cells of the same universe that contain the point too."""
+
+
+class InspectResult(BaseModel):
+    """Answer of `GET /models/{id}/inspect`: what lies at a point, from the root down."""
+
+    point: tuple[float, float, float]
+    found: bool
+    path: list[PathStep] = Field(default_factory=list)
+    instance: int | None = None
+    """Instance of the deepest cell (OpenMC's distribcell index)."""
+    material: int | None = None
+    """None for a void cell or outside the geometry."""
+    material_name: str = ""
+    density: float | None = None
+    """[g/cm³]: the cell's `Cell.density`, else its material's."""
+    temperature: float | None = None
+    """[K] when the model sets one for the cell or material."""

@@ -3,7 +3,10 @@
 OpenMC calls ``MPI_Abort`` on bad input, which kills the whole process, so the
 library lives only in spawned workers. Each worker keeps one model loaded in
 plot mode (``openmc.lib.init(['-p', folder])``; no nuclear data needed) and
-answers slice requests with ready-encoded frames. When a worker dies, the
+answers slice requests with ready-encoded frames: the deepest cells, plus the
+cells at one universe level, the temperature and the weight-window lower
+bounds when asked for. It also answers ``inspect`` (the nesting path at a
+point) with the model read through the Python API. When a worker dies, the
 OpenMC error it printed (its stdout and stderr go to a log file) is reported
 and a fresh worker is started for the next request.
 """
@@ -18,7 +21,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from pyvised_protocol.schemas import SliceRequest
+from pyvised_protocol.schemas import InspectResult, SliceRequest
 
 from .errors import ServiceError
 
@@ -55,9 +58,66 @@ def _slice_kwargs(request: dict[str, Any]) -> dict[str, Any]:
         "basis": request["basis"],
         "pixels": request["pixels"],
         "show_overlaps": request["show_overlaps"],
-        "level": request["level"],
-        "include_properties": request["properties"],
     }
+
+
+class _Loaded:
+    """What a worker keeps about its model besides ``openmc.lib``'s state."""
+
+    def __init__(self, folder: str) -> None:
+        self.folder = folder
+        self._windows: list | None = None
+        self._model: Any = None
+
+    @property
+    def windows(self) -> list:
+        if self._windows is None:
+            from .weightwindows import read_weight_windows
+
+            self._windows = read_weight_windows(Path(self.folder) / "model.xml")
+        return self._windows
+
+    @property
+    def model(self) -> Any:
+        if self._model is None:
+            from .inspection import load_model
+
+            self._model = load_model(Path(self.folder) / "model.xml")
+        return self._model
+
+
+def render_slice(lib: Any, loaded: _Loaded, request: dict[str, Any], meta: dict[str, Any]) -> bytes:
+    """One slice frame: the deepest cells and the layers the request asks for."""
+    from pyvised_protocol.slices import encode_slice
+
+    from .weightwindows import lower_bounds, slice_points
+
+    start = time.perf_counter()
+    kwargs = _slice_kwargs(request)
+    ids, properties = lib.slice_data(**kwargs, include_properties=request["properties"])
+    level_ids = None
+    if request.get("level") is not None:
+        level_ids, _ = lib.slice_data(**kwargs, level=request["level"], include_properties=False)
+    ww_lower = None
+    layer = request.get("weight_windows")
+    if layer is not None:
+        points = slice_points(
+            request["basis"], kwargs["origin"], request["width"], request["pixels"]
+        )
+        values = lower_bounds(loaded.windows, points, layer["particle"], layer["energy"])
+        ww_lower = values.reshape(ids.shape[0], ids.shape[1])
+    meta["render_seconds"] = time.perf_counter() - start
+    return encode_slice(ids, properties, meta, level_ids=level_ids, ww_lower=ww_lower)
+
+
+def inspect(lib: Any, loaded: _Loaded, point: tuple[float, float, float]) -> dict[str, Any]:
+    from .inspection import inspect_point
+
+    try:
+        _cell, instance = lib.find_cell(point)
+    except Exception:  # GeometryError: no cell there
+        instance = None
+    return inspect_point(loaded.model, point, instance).model_dump()
 
 
 def worker_main(conn: multiprocessing.connection.Connection, log_path: str) -> None:
@@ -68,9 +128,7 @@ def worker_main(conn: multiprocessing.connection.Connection, log_path: str) -> N
 
     import openmc.lib  # pyright: ignore[reportMissingImports]  (container only)
 
-    from pyvised_protocol.slices import encode_slice
-
-    loaded: str | None = None
+    loaded: _Loaded | None = None
     while True:
         try:
             message = conn.recv()
@@ -79,7 +137,7 @@ def worker_main(conn: multiprocessing.connection.Connection, log_path: str) -> N
         if message is None:
             break
         op, folder, *args = message
-        if loaded != folder:
+        if loaded is None or loaded.folder != folder:
             try:
                 if loaded is not None:
                     openmc.lib.finalize()
@@ -89,16 +147,16 @@ def worker_main(conn: multiprocessing.connection.Connection, log_path: str) -> N
                 conn.send(("error", f"{type(exc).__name__}: {exc}"))
                 conn.close()
                 os._exit(1)  # a half-initialised library cannot be reused
-            loaded = folder
+            loaded = _Loaded(folder)
         try:
             if op == "load":
                 conn.send(("ok", None))
             elif op == "slice":
                 request, meta = args
-                start = time.perf_counter()
-                ids, properties = openmc.lib.slice_data(**_slice_kwargs(request))
-                meta["render_seconds"] = time.perf_counter() - start
-                conn.send(("ok", encode_slice(ids, properties, meta)))
+                conn.send(("ok", render_slice(openmc.lib, loaded, request, meta)))
+            elif op == "inspect":
+                (point,) = args
+                conn.send(("ok", inspect(openmc.lib, loaded, point)))
             else:
                 conn.send(("error", f"unknown operation {op!r}"))
         except Exception as exc:
@@ -236,6 +294,9 @@ class RenderPool:
 
     def render(self, folder: Path, request: SliceRequest, meta: dict[str, Any]) -> bytes:
         return self._call("slice", folder, request.model_dump(), meta)
+
+    def inspect(self, folder: Path, point: tuple[float, float, float]) -> InspectResult:
+        return InspectResult.model_validate(self._call("inspect", folder, point))
 
     def shutdown(self) -> None:
         for worker in self._workers:

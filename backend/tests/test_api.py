@@ -12,6 +12,7 @@ from pyvised_protocol import API_PREFIX, PROTOCOL_VERSION, frames
 from pyvised_protocol.schemas import (
     BoundingBox,
     HealthInfo,
+    InspectResult,
     ModelInfo,
     SelfTestResult,
     SelfTestStep,
@@ -49,6 +50,7 @@ class FakeModels:
 class FakeRenderer:
     def __init__(self):
         self.preloaded = []
+        self.inspected = []
         self.started = self.shut_down = False
 
     def start(self):
@@ -62,6 +64,10 @@ class FakeRenderer:
         ids = np.zeros((v, h, 3), dtype=np.int32)
         ids[..., 0] = 7
         return encode_slice(ids, None, meta)
+
+    def inspect(self, folder, point):
+        self.inspected.append(point)
+        return InspectResult(point=point, found=False)
 
     def shutdown(self):
         self.shut_down = True
@@ -86,7 +92,7 @@ def test_health_needs_no_token(client: TestClient):
     assert response.status_code == 200
     health = HealthInfo.model_validate(response.json())
     assert health.protocol_version == PROTOCOL_VERSION
-    assert {"selftest", "models", "slices"} <= set(health.capabilities)
+    assert {"selftest", "models", "slices", "inspect"} <= set(health.capabilities)
 
 
 @pytest.mark.parametrize("header", [None, "Bearer wrong", TOKEN])
@@ -159,3 +165,14 @@ def test_renderer_starts_and_stops_with_the_app(tmp_path: Path, fakes):
     with TestClient(server.create_app(config, models=models, renderer=renderer)):
         assert renderer.started
     assert renderer.shut_down
+
+
+def test_inspect_asks_the_renderer(client: TestClient, fakes):
+    _, renderer = fakes
+    query = {"x": 1.5, "y": -2, "z": 0}
+    response = client.get(f"{API_PREFIX}/models/abc/inspect", headers=AUTH, params=query)
+    assert response.status_code == 200
+    assert InspectResult.model_validate(response.json()).point == (1.5, -2.0, 0.0)
+    assert renderer.inspected == [(1.5, -2.0, 0.0)]
+    response = client.get(f"{API_PREFIX}/models/abc/inspect", headers=AUTH, params={"x": 1})
+    assert response.status_code == 422

@@ -25,6 +25,14 @@ pytestmark = pytest.mark.openmc
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
+@pytest.fixture(autouse=True)
+def fresh_ids():
+    """Tests build models with the same ids; OpenMC would warn about each reuse."""
+    import openmc
+
+    openmc.reset_auto_ids()
+
+
 @pytest.fixture
 def workspace(tmp_path: Path) -> Path:
     ws = tmp_path / "ws"
@@ -191,3 +199,84 @@ def test_api_end_to_end(config: Config):
         )
         assert response.status_code == 200
         assert decode_slice(response.content).shape == (16, 16)
+
+
+def test_universe_levels_and_unbounded_axes(config: Config, workspace: Path):
+    import openmc
+
+    info = ModelService(config).open(OpenModelRequest(path="pins.py")).info
+    assert info.max_level == 1, "root cells, then the pins of lattice 5"
+
+    # a tube along (1, 1, 0) is a general Cylinder without a bounding box: OpenMC's box is
+    # infinite in z, so the extent comes from the vacuum planes
+    water = openmc.Material(material_id=1)
+    water.add_nuclide("H1", 2.0)
+    water.set_density("g/cm3", 1.0)
+    wall = openmc.ZCylinder(r=10.0, boundary_type="vacuum")
+    top = openmc.ZPlane(z0=5.0, boundary_type="vacuum")
+    bottom = openmc.ZPlane(z0=-7.0, boundary_type="vacuum")
+    tube = openmc.Cylinder(x0=0.0, y0=0.0, z0=0.0, r=1.0, dx=1.0, dy=1.0, dz=0.0)
+    inner = openmc.Cell(cell_id=2, region=-wall & -tube)
+    outer = openmc.Cell(cell_id=1, fill=water, region=-wall & -top & +bottom & ~inner.region)
+    model = openmc.Model(geometry=openmc.Geometry([outer, inner]), materials=[water])
+    model.export_to_model_xml(workspace / "tube" / "model.xml")
+    info = ModelService(config).open(OpenModelRequest(path="tube/model.xml")).info
+    box = info.bounding_box
+    assert box.lower_left == pytest.approx((-10.0, -10.0, -7.0))
+    assert box.upper_right == pytest.approx((10.0, 10.0, 5.0))
+    assert box.clipped == (False, False, False)
+
+
+def test_level_layer_and_inspect(config: Config, pool: RenderPool):
+    opened = ModelService(config).open(OpenModelRequest(path="pins.py"))  # pitch 1
+    request = SliceRequest(
+        basis="xy", origin=(0.5, 0.0, 0.0), width=(4.0, 4.0), pixels=(40, 40), level=0
+    )
+    data = decode_slice(pool.render(opened.directory, request, {}))
+    assert data.level_cells is not None and data.level_instances is not None
+    assert set(np.unique(data.cells)) == {OUTSIDE, 1, 2, 11}
+    assert set(np.unique(data.level_cells)) == {OUTSIDE, 10, 11}, "lattice cell 10 at level 0"
+
+    result = pool.inspect(opened.directory, (-0.5, 0.5, 0.0))  # centre of the top-left pin
+    assert result.found and [(s.level, s.cell) for s in result.path] == [(0, 10), (1, 1)]
+    assert result.path[0].lattice == 5 and result.path[0].lattice_index == [0, 1]
+    assert result.path[1].local == pytest.approx((0.0, 0.0, 0.0))
+    assert result.path[1].universe == 1 and result.path[1].cell_name == "fuel"
+    assert (result.material, result.material_name) == (1, "fuel")
+    assert result.density == pytest.approx(10.0) and result.instance is not None
+    void = pool.inspect(opened.directory, (1.5, 0.0, 0.0))
+    assert void.found and void.material is None and void.path[-1].cell == 11
+    outside = pool.inspect(opened.directory, (0.0, 50.0, 0.0))
+    assert not outside.found and outside.path == []
+
+
+def test_weight_window_layer(config: Config, workspace: Path, pool: RenderPool):
+    import openmc
+
+    water = openmc.Material(material_id=1)
+    water.add_nuclide("H1", 2.0)
+    water.set_density("g/cm3", 1.0)
+    sphere = openmc.Sphere(r=4.0, boundary_type="vacuum")
+    model = openmc.Model(
+        geometry=openmc.Geometry([openmc.Cell(cell_id=1, fill=water, region=-sphere)]),
+        materials=[water],
+    )
+    mesh = openmc.RegularMesh(mesh_id=3)
+    mesh.lower_left, mesh.upper_right, mesh.dimension = (-2, -2, -2), (2, 2, 2), (2, 1, 1)
+    model.settings.weight_windows = [
+        openmc.WeightWindows(mesh, [0.5, 0.125], upper_bound_ratio=5.0, energy_bounds=[0, 2e7])
+    ]
+    model.export_to_model_xml(workspace / "ww" / "model.xml")
+    opened = ModelService(config).open(OpenModelRequest(path="ww/model.xml"))
+    assert [w.mesh_id for w in opened.info.weight_windows] == [3]
+    request = SliceRequest(
+        basis="xy",
+        origin=(0.0, 0.0, 0.0),
+        width=(8.0, 8.0),
+        pixels=(8, 8),
+        weight_windows={"particle": "neutron"},
+    )
+    data = decode_slice(pool.render(opened.directory, request, {}))
+    assert data.ww_lower is not None
+    assert data.ww_lower[3, 2] == pytest.approx(0.5) and data.ww_lower[4, 5] == pytest.approx(0.125)
+    assert np.isnan(data.ww_lower[0, 0]), "outside the mesh"

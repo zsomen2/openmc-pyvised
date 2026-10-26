@@ -37,6 +37,52 @@ UNBOUNDED_EXTENT = 100.0
 """Half-extent [cm] used on axes along which the geometry is unbounded."""
 
 
+BOUNDARIES = ("vacuum", "reflective", "white", "periodic")
+
+
+def boundary_extent(geometry: Any) -> tuple[list[float], list[float]]:
+    """Per axis, the lowest and highest finite coordinate of the boundary surfaces.
+
+    OpenMC cannot bound some regions (a rotated cylinder is a general `Cylinder`
+    without a bounding box), so a geometry whose particles all leave through
+    vacuum planes may still report an infinite box; the boundary surfaces give
+    its extent. Axes without such a coordinate stay infinite.
+    """
+    lower, upper = [math.inf] * 3, [-math.inf] * 3
+    for surface in geometry.get_all_surfaces().values():
+        if surface.boundary_type not in BOUNDARIES:
+            continue
+        for side in "-+":
+            try:
+                box = surface.bounding_box(side)
+            except Exception:
+                continue
+            for axis in range(3):
+                for value in (float(box.lower_left[axis]), float(box.upper_right[axis])):
+                    if math.isfinite(value):
+                        lower[axis] = min(lower[axis], value)
+                        upper[axis] = max(upper[axis], value)
+    return (
+        [lo if lo < hi else -math.inf for lo, hi in zip(lower, upper, strict=True)],
+        [hi if lo < hi else math.inf for lo, hi in zip(lower, upper, strict=True)],
+    )
+
+
+def geometry_bounds(geometry: Any) -> tuple[list[float], list[float]]:
+    """The geometry's bounding box; infinite axes fall back on the boundary surfaces."""
+    box = geometry.bounding_box
+    lower = [float(x) for x in box.lower_left]
+    upper = [float(x) for x in box.upper_right]
+    if all(math.isfinite(v) for v in lower + upper):
+        return lower, upper
+    fallback_lower, fallback_upper = boundary_extent(geometry)
+    for axis in range(3):
+        unbounded = not (math.isfinite(lower[axis]) and math.isfinite(upper[axis]))
+        if unbounded and math.isfinite(fallback_lower[axis] + fallback_upper[axis]):
+            lower[axis], upper[axis] = fallback_lower[axis], fallback_upper[axis]
+    return lower, upper
+
+
 def bounding_box(lower: Any, upper: Any) -> BoundingBox:
     ll, ur, clipped = [], [], []
     for lo, hi in zip(lower, upper, strict=True):
@@ -217,6 +263,36 @@ def _first(value: Any) -> float | None:
     return float(values[0]) if values else None
 
 
+def _max_level(geometry: Any) -> int:
+    """Deepest universe level that holds cells (0: only the root universe's cells)."""
+    import openmc  # pyright: ignore[reportMissingImports]  (container only)
+
+    depth: dict[int, int] = {}
+
+    def below(universe: Any) -> int:
+        if universe.id in depth:
+            return depth[universe.id]
+        depth[universe.id] = 0  # a universe never contains itself; this ends any loop
+        deepest = 0
+        for cell in universe.cells.values():
+            fill = cell.fill
+            if isinstance(fill, openmc.Lattice):
+                inner = {u.id: u for u in _flatten(fill.universes)}
+                if fill.outer is not None:
+                    inner[fill.outer.id] = fill.outer
+                children = list(inner.values())
+            elif isinstance(fill, openmc.UniverseBase):
+                children = [fill]
+            else:
+                children = []
+            for child in children:
+                deepest = max(deepest, 1 + below(child))
+        depth[universe.id] = deepest
+        return deepest
+
+    return below(geometry.root_universe)
+
+
 def _geometry(model: Any) -> dict[str, Any]:
     import openmc  # pyright: ignore[reportMissingImports]  (container only)
 
@@ -319,10 +395,10 @@ def _geometry(model: Any) -> dict[str, Any]:
         )
         for sid, surf in sorted(surfaces.items())
     ]
-    bbox = geometry.bounding_box
     return {
-        "bounding_box": bounding_box(bbox.lower_left, bbox.upper_right),
+        "bounding_box": bounding_box(*geometry_bounds(geometry)),
         "root_universe": geometry.root_universe.id,
+        "max_level": _max_level(geometry),
         "cells": cell_infos,
         "universes": universe_infos,
         "lattices": lattice_infos,

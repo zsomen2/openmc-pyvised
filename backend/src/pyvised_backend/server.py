@@ -22,6 +22,7 @@ from pyvised_protocol import API_PREFIX, PROTOCOL_VERSION, frames
 from pyvised_protocol.schemas import (
     ErrorInfo,
     HealthInfo,
+    InspectResult,
     ModelInfo,
     OpenModelRequest,
     SelfTestResult,
@@ -36,7 +37,7 @@ from .models import ModelService, OpenedModel
 from .render import RenderPool
 from .selftest import RESULT_MARKER
 
-CAPABILITIES = ["selftest", "models", "slices"]
+CAPABILITIES = ["selftest", "models", "slices", "levels", "weight_windows", "inspect"]
 SELFTEST_TIMEOUT = 600.0
 
 
@@ -44,6 +45,7 @@ class Renderer(Protocol):
     def start(self) -> None: ...
     def preload(self, folder: Any) -> None: ...
     def render(self, folder: Any, request: SliceRequest, meta: dict[str, Any]) -> bytes: ...
+    def inspect(self, folder: Any, point: tuple[float, float, float]) -> InspectResult: ...
     def shutdown(self) -> None: ...
 
 
@@ -153,6 +155,11 @@ def create_app(
         meta = {"model_id": model_id, **request.model_dump()}
         data = renderer.render(model.directory, request, meta)
         return Response(content=data, media_type=frames.CONTENT_TYPE)
+
+    @private.get("/models/{model_id}/inspect")
+    def model_inspect(model_id: str, x: float, y: float, z: float) -> InspectResult:
+        model = models.get(model_id)
+        return renderer.inspect(model.directory, (x, y, z))
 
     app.include_router(public)
     app.include_router(private)
