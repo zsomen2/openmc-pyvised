@@ -4,6 +4,8 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QMenu, QToolButton, QWidget
 
+from ..backend.manager import Transfer
+
 GREY, AMBER, GREEN, RED = "#8c959f", "#d29922", "#2da44e", "#cf222e"
 
 
@@ -20,7 +22,7 @@ def _dot(color: str, size: int = 12) -> QIcon:
 
 
 class StatusPill(QToolButton):
-    detailsRequested = Signal()
+    setupRequested = Signal()
     selftestRequested = Signal()
     restartRequested = Signal()
     logRequested = Signal()
@@ -33,7 +35,7 @@ class StatusPill(QToolButton):
         self.setAutoRaise(True)
         menu = QMenu(self)
         for text, signal in (
-            (self.tr("Details…"), self.detailsRequested),
+            (self.tr("Backend setup…"), self.setupRequested),
             (self.tr("Run self-test"), self.selftestRequested),
             (self.tr("Restart backend"), self.restartRequested),
             (self.tr("Show backend log…"), self.logRequested),
@@ -44,14 +46,24 @@ class StatusPill(QToolButton):
             menu.addAction(action)
         self.setMenu(menu)
         self.state = "idle"
+        self.detail = ""
+        self.transfer: Transfer | None = None
         self.set_state("idle", "")
 
     def set_state(self, state: str, detail: str) -> None:
+        if state not in ("pulling", "loading"):
+            self.transfer = None
         self.state = state
+        self.detail = detail
         text, color = self.describe(state, detail)
         self.setIcon(_dot(color))
         self.setText(text)
         self.setToolTip(detail or text)
+
+    def set_transfer(self, transfer: Transfer) -> None:
+        """Progress of the image download or load, shown as a percentage."""
+        self.transfer = transfer
+        self.set_state(self.state, self.detail)
 
     def describe(self, state: str, detail: str) -> tuple[str, str]:
         match state:
@@ -66,7 +78,9 @@ class StatusPill(QToolButton):
             case "image_missing":
                 return self.tr("Backend image missing"), RED
             case "pulling":
-                return self.tr("Downloading the OpenMC backend…"), AMBER
+                return self._with_percent(self.tr("Downloading the OpenMC backend…")), AMBER
+            case "loading":
+                return self._with_percent(self.tr("Loading the OpenMC backend…")), AMBER
             case "starting":
                 return self.tr("Starting the OpenMC backend…"), AMBER
             case "ready":
@@ -80,25 +94,6 @@ class StatusPill(QToolButton):
             case _:
                 return self.tr("Backend not started"), GREY
 
-    def explanation(self, state: str, detail: str, image: str) -> str:
-        """Longer help text for the details dialog."""
-        match state:
-            case "docker_missing":
-                return self.tr(
-                    "PyVised runs OpenMC inside Docker. Install Docker Desktop (free for "
-                    "education), start it once, then choose Restart backend."
-                )
-            case "docker_unavailable":
-                return self.tr(
-                    "Docker Desktop is installed but its engine did not start. Start Docker "
-                    "Desktop, wait until it says it is running, then choose Restart backend."
-                )
-            case "image_missing":
-                return self.tr(
-                    "The backend image {image} is not on this PC. Developers build it with "
-                    "'just backend-build'."
-                ).format(image=image)
-            case "error":
-                return detail
-            case _:
-                return detail or self.describe(state, detail)[0]
+    def _with_percent(self, text: str) -> str:
+        fraction = self.transfer.fraction if self.transfer is not None else None
+        return text if fraction is None else f"{text} {fraction * 100:.0f} %"

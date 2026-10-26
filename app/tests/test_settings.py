@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from PySide6.QtCore import QSettings
@@ -107,3 +108,38 @@ def test_simulation_settings_and_added_libraries(tmp_path: Path):
     assert again.run_threads == 8
     assert again.run_limits["time_limit"] == (True, 2.5)
     assert again.added_libraries == [("endfb80", Path("D:/data/endfb-viii.0"))]
+
+
+def test_backend_image_housekeeping(settings: AppSettings):
+    assert settings.remove_old_images is True and settings.selftest_image == ""
+    settings.remove_old_images = False
+    settings.selftest_image = " sha256:abc "
+    assert settings.remove_old_images is False and settings.selftest_image == "sha256:abc"
+
+
+def test_machine_defaults_apply_until_the_user_changes_them(tmp_path: Path, monkeypatch):
+    r"""The installer's "shared lab PC" option writes %PROGRAMDATA%\PyVised\PyVised.ini;
+    Qt reads it for keys the user's own file does not have."""
+    user, system = tmp_path / "roaming", tmp_path / "programdata"
+    (system / "PyVised").mkdir(parents=True)
+    (system / "PyVised" / "PyVised.ini").write_text(
+        "[%General]\nask_workspace_at_startup=true\nreopen_last_model=false\n", encoding="utf-8"
+    )
+    ini, user_scope, system_scope = (
+        QSettings.Format.IniFormat,
+        QSettings.Scope.UserScope,
+        QSettings.Scope.SystemScope,
+    )
+    QSettings.setPath(ini, user_scope, str(user))
+    QSettings.setPath(ini, system_scope, str(system))
+    try:
+        settings = AppSettings()
+        assert settings.ask_workspace_at_startup is True
+        assert settings.reopen_last_model is False
+        settings.reopen_last_model = True
+        settings.sync()
+        assert AppSettings().reopen_last_model is True
+        assert (user / "PyVised" / "PyVised.ini").is_file(), "the user's own file"
+    finally:
+        QSettings.setPath(ini, user_scope, os.environ.get("APPDATA", ""))
+        QSettings.setPath(ini, system_scope, os.environ.get("PROGRAMDATA", ""))

@@ -9,12 +9,15 @@ from PySide6.QtWidgets import QApplication, QMessageBox, QTabWidget
 from sim_fakes import FakeRunApi, run_info
 
 from pyvised.backend.client import Connection
-from pyvised.backend.manager import BackendConfig, BackendManager
+from pyvised.backend.manager import BackendConfig, BackendManager, BackendState, Transfer
 from pyvised.core import model_session, run_session
 from pyvised.core.tasks import TaskRunner
 from pyvised.render.colorize import ColorMode
+from pyvised.ui import main_window
+from pyvised.ui.dialogs.setup_dialog import Status
 from pyvised.ui.main_window import MainWindow
 from pyvised_protocol.runs import Event
+from pyvised_protocol.schemas import SelfTestResult, SelfTestStep
 
 
 @pytest.fixture
@@ -42,9 +45,69 @@ def test_status_pill_follows_backend_state(window: MainWindow):
     window.backend.stateChanged.emit("ready", "0.16.0")
     assert window.status_pill.text() == "Ready · OpenMC 0.16.0"
     assert window.act_selftest.isEnabled()
+    assert window.setup_dialog is None, "nothing to set up"
     window.backend.stateChanged.emit("docker_missing", "")
     assert window.status_pill.text() == "Docker Desktop is not installed"
     assert not window.act_selftest.isEnabled()
+    assert window.setup_dialog is not None and window.setup_dialog.isVisible()
+
+
+def test_download_progress_shows_in_the_pill(window: MainWindow):
+    window.backend.stateChanged.emit("pulling", "ghcr.io/x/b:1")
+    window.backend.transferChanged.emit(Transfer("pull", done=250, total=1000))
+    assert window.status_pill.text() == "Downloading the OpenMC backend… 25 %"
+    window.backend.stateChanged.emit("starting", "")
+    assert window.status_pill.text() == "Starting the OpenMC backend…"
+
+
+class FakeSelfTestApi:
+    result = SelfTestResult(
+        ok=True,
+        steps=[SelfTestStep(name="build", ok=True, seconds=1.0)],
+        k_eff=1.39,
+        k_eff_std=0.01,
+    )
+
+    def __init__(self, connection):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        pass
+
+    def selftest(self):
+        return self.result
+
+
+def test_a_new_image_runs_the_selftest_once(qtbot, window: MainWindow, monkeypatch):
+    monkeypatch.setattr(main_window, "ApiClient", FakeSelfTestApi)
+    window.backend.connection = Connection("http://127.0.0.1:1", "t")
+    window.backend.facts.image_id = "sha256:new"
+    window.backend.state = BackendState.READY
+    window.backend.stateChanged.emit("ready", "0.16.0")
+    qtbot.waitUntil(lambda: window.settings.selftest_image == "sha256:new")
+    dialog = window.setup_dialog
+    assert dialog is not None and not dialog.isVisible(), "a passed automatic test stays quiet"
+    assert dialog.rows["selftest"].status is Status.OK
+    assert "k-eff = 1.3900 ± 0.0100" in dialog.rows["selftest"].help.text()
+
+
+def test_a_failed_selftest_opens_the_setup_dialog(qtbot, window: MainWindow, monkeypatch):
+    failed = SelfTestResult(
+        ok=False, steps=[SelfTestStep(name="render", ok=False, seconds=0.2, detail="boom")]
+    )
+    monkeypatch.setattr(FakeSelfTestApi, "result", failed)
+    monkeypatch.setattr(main_window, "ApiClient", FakeSelfTestApi)
+    window.backend.connection = Connection("http://127.0.0.1:1", "t")
+    window.backend.facts.image_id = "sha256:new"
+    window.backend.state = BackendState.READY
+    window.backend.stateChanged.emit("ready", "0.16.0")
+    qtbot.waitUntil(lambda: window.setup_dialog is not None and window.setup_dialog.isVisible())
+    row = window.setup_dialog.rows["selftest"]
+    assert row.status is Status.FAILED and row.help.text() == "render: boom"
+    assert window.settings.selftest_image == ""
 
 
 def test_open_needs_a_ready_backend(window: MainWindow):

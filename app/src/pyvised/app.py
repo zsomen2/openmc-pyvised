@@ -15,7 +15,7 @@ from PySide6.QtCore import QCoreApplication, QLockFile, QSettings, Qt, QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
-from . import __version__
+from . import __version__, self_test
 from .backend.manager import BackendConfig, BackendManager, BackendState
 from .core.i18n import install_translators
 from .core.logging_setup import configure_logging
@@ -55,6 +55,15 @@ def _parse_args(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
         help="save the window once the backend has settled (and --open has rendered), then quit",
     )
     parser.add_argument("--size", type=_size, metavar="WxH", help="window size, e.g. 1600x1000")
+    parser.add_argument(
+        "--self-test",
+        action="store_true",
+        help="check this installation without a window (the backend too unless --no-backend), "
+        "write a report and exit with 0 if everything passed",
+    )
+    parser.add_argument(
+        "--report", type=Path, metavar="FILE", help="where --self-test writes its report"
+    )
     return parser.parse_known_args(argv)
 
 
@@ -97,6 +106,11 @@ def _schedule_screenshot(
             dialog_path = path.with_name(f"{path.stem}_dialog{path.suffix}")
             dialog.grab().save(str(dialog_path))
             log.info("open dialog saved to %s", dialog_path)
+        setup = window.setup_dialog
+        if setup is not None and setup.isVisible():
+            setup_path = path.with_name(f"{path.stem}_setup{path.suffix}")
+            setup.grab().save(str(setup_path))
+            log.info("backend setup dialog saved to %s", setup_path)
         app.quit()
 
     def later(*args) -> None:
@@ -146,10 +160,19 @@ def main(argv: list[str] | None = None) -> int:
         local_data_dir().mkdir(parents=True, exist_ok=True)
         lock = QLockFile(str(local_data_dir() / "pyvised.lock"))
         if not lock.tryLock(100):
+            if args.self_test:
+                return self_test.blocked(args.report)
             QMessageBox.information(
                 None, "PyVised", QCoreApplication.translate("main", "PyVised is already running.")
             )
             return 1
+        if args.self_test:
+            code = self_test.run_self_test(
+                app, settings, report_path=args.report, backend=not args.no_backend
+            )
+            lock.unlock()
+            del translators
+            return code
         if settings.ask_workspace_at_startup:
             folder = QFileDialog.getExistingDirectory(
                 None,

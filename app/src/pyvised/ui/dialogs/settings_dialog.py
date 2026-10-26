@@ -148,6 +148,10 @@ class SettingsDialog(QDialog):
         self.image.setPlaceholderText(default_image())
         self.keep_running = QCheckBox(self.tr("Keep the backend running after PyVised exits"))
         self.keep_running.setChecked(settings.keep_backend_running)
+        self.remove_old = QCheckBox(
+            self.tr("Remove the backend images of earlier versions after an update")
+        )
+        self.remove_old.setChecked(settings.remove_old_images)
         self.cpus = QDoubleSpinBox()
         self.cpus.setRange(0.0, 256.0)
         self.cpus.setDecimals(1)
@@ -168,6 +172,7 @@ class SettingsDialog(QDialog):
             backend_form.addRow("", note)
         backend_form.addRow(self.tr("CPU limit:"), self.cpus)
         backend_form.addRow("", self.keep_running)
+        backend_form.addRow("", self.remove_old)
         self.libraries = QListWidget()
         self.libraries.setMaximumHeight(110)
         for name, folder in settings.added_libraries:
@@ -279,6 +284,7 @@ class SettingsDialog(QDialog):
             "line_width": int(self.line_width.currentData()),
             "backend_image": self.image.text().strip(),
             "keep_backend_running": self.keep_running.isChecked(),
+            "remove_old_images": self.remove_old.isChecked(),
             "backend_cpus": float(self.cpus.value()),
             "run_threads": int(self.run_threads.value()),
             "run_entropy_mesh": self.run_entropy.isChecked(),

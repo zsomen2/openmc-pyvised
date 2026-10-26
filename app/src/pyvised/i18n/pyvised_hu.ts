@@ -959,401 +959,411 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="94"/>
+        <location filename="../self_test.py" line="121"/>
+        <location filename="../ui/main_window.py" line="106"/>
         <source>Geometry</source>
         <translation>Geometria</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="95"/>
-        <location filename="../ui/main_window.py" line="400"/>
+        <location filename="../ui/main_window.py" line="107"/>
+        <location filename="../ui/main_window.py" line="419"/>
         <source>Simulation</source>
         <translation>Szimuláció</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="149"/>
+        <location filename="../ui/main_window.py" line="163"/>
         <source>&amp;Open model…</source>
         <translation>Modell &amp;megnyitása…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="151"/>
+        <location filename="../ui/main_window.py" line="165"/>
         <source>&amp;Reload model</source>
         <translation>Modell ú&amp;jratöltése</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="153"/>
+        <location filename="../ui/main_window.py" line="167"/>
         <source>Switch &amp;workspace…</source>
         <translation>&amp;Munkaterület váltása…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="156"/>
+        <location filename="../ui/main_window.py" line="170"/>
         <source>Open workspace &amp;folder</source>
         <translation>Munkaterület &amp;mappájának megnyitása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="159"/>
+        <location filename="../ui/main_window.py" line="173"/>
         <source>&amp;Export image…</source>
         <translation>Kép &amp;exportálása…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="164"/>
+        <location filename="../ui/main_window.py" line="178"/>
         <source>Export slice &amp;data (.npz)…</source>
         <translation>Metszet&amp;adatok exportálása (.npz)…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="167"/>
+        <location filename="../ui/main_window.py" line="181"/>
         <source>E&amp;xit</source>
         <translation>&amp;Kilépés</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="168"/>
+        <location filename="../ui/main_window.py" line="182"/>
         <source>Boundary &amp;lines</source>
         <translation>&amp;Határvonalak</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="172"/>
+        <location filename="../ui/main_window.py" line="186"/>
         <source>Re&amp;set views</source>
         <translation>Nézetek &amp;visszaállítása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="174"/>
+        <location filename="../ui/main_window.py" line="188"/>
         <source>Particle &amp;tracks…</source>
         <translation>Részecske&amp;pályák…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="175"/>
+        <location filename="../ui/main_window.py" line="189"/>
         <source>Generate particle tracks and play them on the views</source>
         <translation>Részecskepályák előállítása és lejátszása a nézeteken</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="176"/>
+        <location filename="../ui/main_window.py" line="190"/>
+        <source>&amp;Backend setup…</source>
+        <translation>Háttérszolgáltatás &amp;beállítása…</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="192"/>
         <source>Run backend &amp;self-test</source>
         <translation>Háttérszolgáltatás &amp;önellenőrzése</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="177"/>
+        <location filename="../ui/main_window.py" line="194"/>
         <source>Backend &amp;log…</source>
         <translation>Háttérszolgáltatás &amp;naplója…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="178"/>
+        <location filename="../ui/main_window.py" line="195"/>
         <source>Copy &amp;diagnostics</source>
         <translation>&amp;Diagnosztika másolása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="179"/>
+        <location filename="../ui/main_window.py" line="196"/>
         <source>&amp;Restart backend</source>
         <translation>Háttérszolgáltatás új&amp;raindítása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="181"/>
+        <location filename="../ui/main_window.py" line="198"/>
         <source>Nuclear-data &amp;libraries…</source>
         <translation>Magadat-&amp;könyvtárak…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="184"/>
+        <location filename="../ui/main_window.py" line="201"/>
         <source>&amp;Preferences…</source>
         <translation>&amp;Programbeállítások…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="187"/>
+        <location filename="../ui/main_window.py" line="204"/>
         <source>OpenMC &amp;documentation</source>
         <translation>OpenMC-&amp;dokumentáció</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="191"/>
+        <location filename="../ui/main_window.py" line="208"/>
         <source>PyVised on &amp;GitHub</source>
         <translation>A PyVised a &amp;GitHubon</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="193"/>
+        <location filename="../ui/main_window.py" line="210"/>
         <source>&amp;About PyVised</source>
         <translation>A PyVised &amp;névjegye</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="197"/>
+        <location filename="../ui/main_window.py" line="214"/>
         <source>&amp;File</source>
         <translation>&amp;Fájl</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="199"/>
+        <location filename="../ui/main_window.py" line="216"/>
         <source>Open &amp;recent</source>
         <translation>&amp;Legutóbbi modellek</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="211"/>
+        <location filename="../ui/main_window.py" line="228"/>
         <source>&amp;View</source>
         <translation>&amp;Nézet</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="212"/>
+        <location filename="../ui/main_window.py" line="229"/>
         <source>&amp;Colour by</source>
         <translation>&amp;Színezés</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="220"/>
+        <location filename="../ui/main_window.py" line="237"/>
         <source>&amp;Labels</source>
         <translation>&amp;Feliratok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="232"/>
+        <location filename="../ui/main_window.py" line="249"/>
         <source>&amp;Tools</source>
         <translation>&amp;Eszközök</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="241"/>
+        <location filename="../ui/main_window.py" line="259"/>
         <source>&amp;Settings</source>
         <translation>&amp;Beállítások</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="243"/>
+        <location filename="../ui/main_window.py" line="261"/>
         <source>&amp;Help</source>
         <translation>&amp;Súgó</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="251"/>
+        <location filename="../ui/main_window.py" line="269"/>
         <source>Material</source>
         <translation>Anyag</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="252"/>
+        <location filename="../ui/main_window.py" line="270"/>
         <source>Cell</source>
         <translation>Cella</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="253"/>
+        <location filename="../ui/main_window.py" line="271"/>
         <source>Universe</source>
         <translation>Univerzum</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="254"/>
+        <location filename="../ui/main_window.py" line="272"/>
         <source>Density</source>
         <translation>Sűrűség</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="255"/>
+        <location filename="../ui/main_window.py" line="273"/>
         <source>Temperature</source>
         <translation>Hőmérséklet</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="256"/>
+        <location filename="../ui/main_window.py" line="274"/>
         <source>Importance (weight windows)</source>
         <translation>Importance (súlyablakok)</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="257"/>
+        <location filename="../ui/main_window.py" line="275"/>
         <source>None (lines only)</source>
         <translation>Nincs (csak vonalak)</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="262"/>
+        <location filename="../ui/main_window.py" line="280"/>
         <source>No labels</source>
         <translation>Nincsenek feliratok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="263"/>
+        <location filename="../ui/main_window.py" line="281"/>
         <source>Cell numbers</source>
         <translation>Cellaszámok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="264"/>
+        <location filename="../ui/main_window.py" line="282"/>
         <source>Material numbers</source>
         <translation>Anyagszámok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="265"/>
+        <location filename="../ui/main_window.py" line="283"/>
         <source>Universe numbers</source>
         <translation>Univerzumszámok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="269"/>
+        <location filename="../ui/main_window.py" line="287"/>
         <source>Main toolbar</source>
         <translation>Fő eszköztár</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="276"/>
+        <location filename="../ui/main_window.py" line="294"/>
         <source>Colour by:</source>
         <translation>Színezés:</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="284"/>
+        <location filename="../ui/main_window.py" line="302"/>
         <source>Level:</source>
         <translation>Szint:</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="287"/>
+        <location filename="../ui/main_window.py" line="305"/>
         <source>Colour by the universes at this level (0: the root universe&apos;s cells)</source>
         <translation>Színezés az ezen a szinten lévő univerzumok szerint (0: a gyökéruniverzum cellái)</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="293"/>
+        <location filename="../ui/main_window.py" line="311"/>
         <source>Particle and energy group of the weight windows</source>
         <translation>A súlyablakok részecskéje és energiacsoportja</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="298"/>
+        <location filename="../ui/main_window.py" line="316"/>
         <source>Labels</source>
         <translation>Feliratok</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="299"/>
+        <location filename="../ui/main_window.py" line="317"/>
         <source>Numbers on the regions</source>
         <translation>Számok a tartományokon</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="374"/>
+        <location filename="../ui/main_window.py" line="393"/>
         <source>A simulation is running. It keeps running in the backend, and PyVised shows it again at the next start.</source>
         <translation>Egy szimuláció fut. A háttérszolgáltatásban tovább fut, és a PyVised a következő indításkor ismét megjeleníti.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="379"/>
+        <location filename="../ui/main_window.py" line="398"/>
         <source>A simulation is running. It stops now and keeps the results of its latest statepoint.</source>
         <translation>Egy szimuláció fut. Most leáll, és megmaradnak a legutóbbi állapotfájljának eredményei.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="382"/>
+        <location filename="../ui/main_window.py" line="401"/>
         <source>Exit</source>
         <translation>Kilépés</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="382"/>
+        <location filename="../ui/main_window.py" line="401"/>
         <source>Restart backend</source>
         <translation>Háttérszolgáltatás újraindítása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="394"/>
+        <location filename="../ui/main_window.py" line="413"/>
         <source>Stopping the simulation and saving its results…</source>
         <translation>A szimuláció leállítása és az eredményeinek mentése…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="395"/>
+        <location filename="../ui/main_window.py" line="414"/>
         <source>Do not wait</source>
         <translation>Ne várjon</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="445"/>
-        <location filename="../ui/main_window.py" line="609"/>
+        <location filename="../ui/main_window.py" line="464"/>
+        <location filename="../ui/main_window.py" line="628"/>
         <source>Open model</source>
         <translation>Modell megnyitása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="447"/>
+        <location filename="../ui/main_window.py" line="466"/>
         <source>OpenMC models ({patterns});;All files (*)</source>
         <translation>OpenMC-modellek ({patterns});;Minden fájl (*)</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="495"/>
+        <location filename="../ui/main_window.py" line="514"/>
         <source>Deepest</source>
         <translation>Legmélyebb</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="512"/>
+        <location filename="../ui/main_window.py" line="531"/>
         <source>{particle}, {low} – {high} eV</source>
         <translation>{particle}, {low} – {high} eV</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="567"/>
+        <location filename="../ui/main_window.py" line="586"/>
         <source>Clear the list</source>
         <translation>A lista törlése</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="570"/>
+        <location filename="../ui/main_window.py" line="589"/>
         <source>No recent models</source>
         <translation>Nincsenek legutóbbi modellek</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="573"/>
+        <location filename="../ui/main_window.py" line="592"/>
         <source>Opening {name}…</source>
         <translation>{name} megnyitása…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="598"/>
+        <location filename="../ui/main_window.py" line="617"/>
         <source>The model has warnings; see the Model section.</source>
         <translation>A modellhez figyelmeztetések tartoznak; lásd a Modell részt.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="664"/>
-        <source>Image: {image}</source>
-        <translation>Konténerkép: {image}</translation>
-    </message>
-    <message>
-        <location filename="../ui/main_window.py" line="665"/>
-        <source>Container: {name}</source>
-        <translation>Konténer: {name}</translation>
-    </message>
-    <message>
-        <location filename="../ui/main_window.py" line="666"/>
-        <source>Workspace: {path}</source>
-        <translation>Munkaterület: {path}</translation>
-    </message>
-    <message>
-        <location filename="../ui/main_window.py" line="669"/>
-        <source>Address: {url}</source>
-        <translation>Cím: {url}</translation>
-    </message>
-    <message>
-        <location filename="../ui/main_window.py" line="670"/>
-        <source>OpenMC backend</source>
-        <translation>OpenMC háttérszolgáltatás</translation>
-    </message>
-    <message>
-        <location filename="../ui/main_window.py" line="676"/>
-        <location filename="../ui/main_window.py" line="696"/>
         <location filename="../ui/main_window.py" line="709"/>
-        <source>Self-test</source>
-        <translation>Önellenőrzés</translation>
+        <source>Remove the OpenMC backend image {image} from Docker? This frees about 3.4 GB; PyVised downloads the image again at its next start.</source>
+        <translation>Eltávolítja a Dockerből az OpenMC háttérszolgáltatás konténerképét ({image})? Ez kb. 3,4 GB helyet szabadít fel; a PyVised a következő indításkor újra letölti a konténerképet.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="676"/>
-        <source>The backend is not ready yet.</source>
-        <translation>A háttérszolgáltatás még nem áll készen.</translation>
+        <location filename="../ui/main_window.py" line="713"/>
+        <source>Remove the backend image</source>
+        <translation>A konténerkép eltávolítása</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="685"/>
+        <location filename="../ui/main_window.py" line="737"/>
+        <source>running…</source>
+        <translation>fut…</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="738"/>
+        <source>Building, rendering and running a small test model…</source>
+        <translation>Egy kis tesztmodell felépítése, kirajzolása és futtatása…</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="757"/>
+        <source>build</source>
+        <translation>felépítés</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="758"/>
+        <source>render</source>
+        <translation>kirajzolás</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="759"/>
+        <source>transport</source>
+        <translation>transzport</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="774"/>
+        <source>passed</source>
+        <translation>sikeres</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="778"/>
+        <source>The backend self-test passed.</source>
+        <translation>A háttérszolgáltatás önellenőrzése sikeres.</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="782"/>
+        <location filename="../ui/main_window.py" line="789"/>
+        <source>failed</source>
+        <translation>sikertelen</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="743"/>
         <source>Running the backend self-test…</source>
         <translation>A háttérszolgáltatás önellenőrzése fut…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="699"/>
-        <source>The backend works: it built, rendered and ran a test model.</source>
-        <translation>A háttérszolgáltatás működik: felépített, kirajzolt és lefuttatott egy tesztmodellt.</translation>
-    </message>
-    <message>
-        <location filename="../ui/main_window.py" line="702"/>
-        <source>The backend self-test failed.</source>
-        <translation>A háttérszolgáltatás önellenőrzése sikertelen.</translation>
-    </message>
-    <message>
-        <location filename="../ui/main_window.py" line="719"/>
+        <location filename="../ui/main_window.py" line="800"/>
         <source>Backend log</source>
         <translation>A háttérszolgáltatás naplója</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="719"/>
+        <location filename="../ui/main_window.py" line="800"/>
         <source>Loading…</source>
         <translation>Betöltés…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="724"/>
+        <location filename="../ui/main_window.py" line="805"/>
         <source>Collecting diagnostics…</source>
         <translation>Diagnosztikai adatok gyűjtése…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="754"/>
+        <location filename="../ui/main_window.py" line="839"/>
         <source>Diagnostics copied to the clipboard.</source>
         <translation>A diagnosztikai adatok a vágólapra kerültek.</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="760"/>
+        <location filename="../ui/main_window.py" line="845"/>
         <source>Choose the workspace folder</source>
         <translation>Válassza ki a munkaterület mappáját</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="783"/>
+        <location filename="../ui/main_window.py" line="868"/>
         <source>Language</source>
         <translation>Nyelv</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="783"/>
+        <location filename="../ui/main_window.py" line="868"/>
         <source>Restart PyVised to switch the language.</source>
         <translation>A nyelv váltásához indítsa újra a PyVisedet.</translation>
     </message>
@@ -1912,84 +1922,378 @@
         <translation>A háttérszolgáltatás fusson tovább a PyVised bezárása után</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="155"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="152"/>
+        <source>Remove the backend images of earlier versions after an update</source>
+        <translation>Frissítés után a korábbi verziók konténerképeinek eltávolítása</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/settings_dialog.py" line="159"/>
         <source>no limit</source>
         <translation>nincs korlát</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="160"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="164"/>
         <source>Backend image:</source>
         <translation>Konténerkép:</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="163"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="167"/>
         <source>Overridden by {variable}: {image}</source>
         <translation>Környezeti változó ({variable}) felülírja: {image}</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="169"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="173"/>
         <source>CPU limit:</source>
         <translation>CPU-korlát:</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="175"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="180"/>
         <source>Add…</source>
         <translation>Hozzáadás…</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="177"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="182"/>
         <source>Remove</source>
         <translation>Eltávolítás</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="186"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="191"/>
         <source>Added libraries:</source>
         <translation>Hozzáadott adatkönyvtárak:</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="189"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="194"/>
         <source>Folders with a cross_sections.xml, e.g. a library from openmc.org. The built-in ENDF/B-VII.1 library is always there. Changing the list restarts the backend.</source>
         <translation>cross_sections.xml fájlt tartalmazó mappák, pl. egy könyvtár az openmc.org oldalról. A beépített ENDF/B-VII.1 könyvtár mindig elérhető. A lista módosítása újraindítja a háttérszolgáltatást.</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="198"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="203"/>
         <source>General</source>
         <translation>Általános</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="199"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="204"/>
         <source>Geometry</source>
         <translation>Geometria</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="200"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="205"/>
         <source>Simulation</source>
         <translation>Szimuláció</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="201"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="206"/>
         <source>Backend</source>
         <translation>Háttérszolgáltatás</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="233"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="238"/>
         <source>Choose a library folder (with cross_sections.xml)</source>
         <translation>Válasszon adatkönyvtár-mappát (cross_sections.xml fájllal)</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="241"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="246"/>
         <source>Library</source>
         <translation>Adatkönyvtár</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="242"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="247"/>
         <source>{folder} has no cross_sections.xml.</source>
         <translation>A(z) {folder} mappában nincs cross_sections.xml.</translation>
     </message>
     <message>
-        <location filename="../ui/dialogs/settings_dialog.py" line="260"/>
+        <location filename="../ui/dialogs/settings_dialog.py" line="265"/>
         <source>Choose the workspace folder</source>
         <translation>Válassza ki a munkaterület mappáját</translation>
+    </message>
+</context>
+<context>
+    <name>SetupDialog</name>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="171"/>
+        <source>OpenMC backend setup</source>
+        <translation>Az OpenMC háttérszolgáltatás beállítása</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="175"/>
+        <source>PyVised runs OpenMC in a Docker container on this PC. These checks get it ready; this window opens again whenever something needs your attention.</source>
+        <translation>A PyVised ezen a gépen egy Docker-konténerben futtatja az OpenMC-t. Ezek az ellenőrzések készítik elő; ez az ablak mindig újra megjelenik, ha valami az Ön figyelmét igényli.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="181"/>
+        <source>Docker Desktop</source>
+        <translation>Docker Desktop</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="182"/>
+        <source>Docker engine</source>
+        <translation>Docker-motor</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="183"/>
+        <source>Disk space</source>
+        <translation>Lemezterület</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="184"/>
+        <source>OpenMC backend image</source>
+        <translation>OpenMC konténerkép</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="185"/>
+        <source>OpenMC backend</source>
+        <translation>OpenMC háttérszolgáltatás</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="186"/>
+        <source>Self-test</source>
+        <translation>Önellenőrzés</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="188"/>
+        <source>Get Docker Desktop…</source>
+        <translation>Docker Desktop letöltése…</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="190"/>
+        <source>Open Docker Desktop</source>
+        <translation>Docker Desktop megnyitása</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="192"/>
+        <source>Download</source>
+        <translation>Letöltés</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="194"/>
+        <source>Load from file…</source>
+        <translation>Betöltés fájlból…</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="196"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="198"/>
+        <source>Remove from this PC…</source>
+        <translation>Eltávolítás a gépről…</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="200"/>
+        <source>Remove the backend image from Docker, e.g. before uninstalling PyVised</source>
+        <translation>A konténerkép eltávolítása a Dockerből, például a PyVised eltávolítása előtt</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="203"/>
+        <source>Run again</source>
+        <translation>Újrafuttatás</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="214"/>
+        <source>Copy diagnostics</source>
+        <translation>Diagnosztika másolása</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="218"/>
+        <source>Retry</source>
+        <translation>Újra</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="267"/>
+        <source>Everything is ready.</source>
+        <translation>Minden készen áll.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="273"/>
+        <source>Unpacking the image…</source>
+        <translation>A konténerkép kicsomagolása…</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="278"/>
+        <source>{done} so far</source>
+        <translation>eddig {done}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="280"/>
+        <source>{done} of {count} layers</source>
+        <translation>{done} / {count} réteg</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="288"/>
+        <source>{done} of {total}</source>
+        <translation>{done} / {total}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="293"/>
+        <source>{rate}/s</source>
+        <translation>{rate}/s</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="306"/>
+        <source>Docker Desktop {version}</source>
+        <translation>Docker Desktop {version}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="309"/>
+        <source>version {version}</source>
+        <translation>verzió: {version}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="316"/>
+        <source>OpenMC {version} · {cpus} CPUs</source>
+        <translation>OpenMC {version} · {cpus} CPU</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="327"/>
+        <source>failed</source>
+        <translation>sikertelen</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="331"/>
+        <source>checking…</source>
+        <translation>ellenőrzés…</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="335"/>
+        <source>not installed</source>
+        <translation>nincs telepítve</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="337"/>
+        <source>PyVised runs OpenMC inside Docker. Install Docker Desktop (free for education), start it once and accept its terms, then choose Retry.</source>
+        <translation>A PyVised Dockerben futtatja az OpenMC-t. Telepítse a Docker Desktopot (oktatási célra ingyenes), indítsa el egyszer, fogadja el a feltételeit, majd válassza az Újra gombot.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="344"/>
+        <location filename="../ui/dialogs/setup_dialog.py" line="382"/>
+        <source>starting…</source>
+        <translation>indítás…</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="345"/>
+        <source>Docker Desktop is starting; this can take a few minutes.</source>
+        <translation>A Docker Desktop indul; ez néhány percig is eltarthat.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="350"/>
+        <source>not running</source>
+        <translation>nem fut</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="352"/>
+        <source>Docker Desktop is installed, but its engine did not start. Open Docker Desktop and wait until it says the engine is running, then choose Retry. If it never starts: virtualization must be enabled in the BIOS/UEFI, and WSL 2 must be installed and up to date (run &apos;wsl --update&apos; in a terminal).</source>
+        <translation>A Docker Desktop telepítve van, de a motorja nem indult el. Nyissa meg a Docker Desktopot, várja meg, amíg jelzi, hogy a motor fut, majd válassza az Újra gombot. Ha egyáltalán nem indul el: a virtualizációt engedélyezni kell a BIOS/UEFI-ben, a WSL 2-nek pedig telepítve és naprakészen kell lennie (futtassa a &apos;wsl --update&apos; parancsot egy terminálban).</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="363"/>
+        <source>The backend image is not on this PC yet. Download it (about 1 GB, once per PC) or, without internet access, load the file pyvised-backend-{version}.tar.gz from the PyVised release page.</source>
+        <translation>A konténerkép még nincs ezen a gépen. Töltse le (kb. 1 GB, gépenként egyszer), vagy internetkapcsolat nélkül töltse be a PyVised kiadási oldaláról letöltött pyvised-backend-{version}.tar.gz fájlt.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="369"/>
+        <source>The backend image {image} is not on this PC. Developers build it with &apos;just backend-build&apos;.</source>
+        <translation>A konténerkép ({image}) nincs ezen a gépen. Fejlesztők a &apos;just backend-build&apos; paranccsal építhetik meg.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="372"/>
+        <source>missing</source>
+        <translation>hiányzik</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="374"/>
+        <source>downloading…</source>
+        <translation>letöltés…</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="378"/>
+        <source>loading…</source>
+        <translation>betöltés…</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="379"/>
+        <source>Loading {file} into Docker.</source>
+        <translation>Betöltés a Dockerbe: {file}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="387"/>
+        <source>stopping…</source>
+        <translation>leállítás…</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="389"/>
+        <source>stopped</source>
+        <translation>leállítva</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="396"/>
+        <source>The registry does not offer this image: this version may not be published yet. Load the image from a file instead.</source>
+        <translation>A konténerkép-tároló nem adja ki ezt a konténerképet: lehet, hogy ez a verzió még nincs közzétéve. Töltse be helyette a konténerképet fájlból.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="401"/>
+        <source>ghcr.io cannot be reached. Check the internet connection and the proxy settings of Docker Desktop, or load the image from a file.</source>
+        <translation>A ghcr.io nem érhető el. Ellenőrizze az internetkapcsolatot és a Docker Desktop proxybeállításait, vagy töltse be a konténerképet fájlból.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="405"/>
+        <source>The disk is full. Free some space, then choose Retry.</source>
+        <translation>Megtelt a lemez. Szabadítson fel helyet, majd válassza az Újra gombot.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="406"/>
+        <source>Getting the image failed. Choose Retry, or load the image from a file.</source>
+        <translation>A konténerkép beszerzése nem sikerült. Válassza az Újra gombot, vagy töltse be a konténerképet fájlból.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="412"/>
+        <source>Container {name}</source>
+        <translation>Konténer: {name}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="414"/>
+        <source>Workspace {path}</source>
+        <translation>Munkaterület: {path}</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="425"/>
+        <source>{free} free on {drive}</source>
+        <translation>szabad hely: {free} ({drive})</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="435"/>
+        <source>The backend image needs about 4.5 GB, and runs need room for their results. Free some space on {drive}.</source>
+        <translation>A konténerképnek kb. 4,5 GB kell, és a futtatások eredményeinek is kell hely. Szabadítson fel helyet ezen a meghajtón: {drive}.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="470"/>
+        <source>Runs once the backend is ready.</source>
+        <translation>Akkor fut le, amikor a háttérszolgáltatás készen áll.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="475"/>
+        <source>Builds, renders and runs a small test model inside the backend.</source>
+        <translation>Felépít, kirajzol és lefuttat egy kis tesztmodellt a háttérszolgáltatásban.</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="482"/>
+        <source>about {n} s left</source>
+        <translation>még kb. {n} s</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="483"/>
+        <source>about {n} min left</source>
+        <translation>még kb. {n} perc</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="495"/>
+        <source>Load the backend image</source>
+        <translation>A konténerkép betöltése</translation>
+    </message>
+    <message>
+        <location filename="../ui/dialogs/setup_dialog.py" line="497"/>
+        <source>Docker image archives (*.tar.gz *.tgz *.tar);;All files (*)</source>
+        <translation>Docker-konténerkép archívumok (*.tar.gz *.tgz *.tar);;Minden fájl (*)</translation>
     </message>
 </context>
 <context>
@@ -2138,104 +2442,94 @@
 <context>
     <name>StatusPill</name>
     <message>
-        <location filename="../ui/status_pill.py" line="36"/>
-        <source>Details…</source>
-        <translation>Részletek…</translation>
+        <location filename="../ui/status_pill.py" line="38"/>
+        <source>Backend setup…</source>
+        <translation>Háttérszolgáltatás beállítása…</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="37"/>
+        <location filename="../ui/status_pill.py" line="39"/>
         <source>Run self-test</source>
         <translation>Önellenőrzés futtatása</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="38"/>
+        <location filename="../ui/status_pill.py" line="40"/>
         <source>Restart backend</source>
         <translation>Háttérszolgáltatás újraindítása</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="39"/>
+        <location filename="../ui/status_pill.py" line="41"/>
         <source>Show backend log…</source>
         <translation>Háttérszolgáltatás naplója…</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="40"/>
+        <location filename="../ui/status_pill.py" line="42"/>
         <source>Copy diagnostics</source>
         <translation>Diagnosztika másolása</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="59"/>
+        <location filename="../ui/status_pill.py" line="71"/>
         <source>Checking Docker…</source>
         <translation>Docker ellenőrzése…</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="61"/>
+        <location filename="../ui/status_pill.py" line="73"/>
         <source>Docker Desktop is not installed</source>
         <translation>A Docker Desktop nincs telepítve</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="63"/>
+        <location filename="../ui/status_pill.py" line="75"/>
         <source>Starting Docker Desktop…</source>
         <translation>Docker Desktop indítása…</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="65"/>
+        <location filename="../ui/status_pill.py" line="77"/>
         <source>Docker is not running</source>
         <translation>A Docker nem fut</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="67"/>
+        <location filename="../ui/status_pill.py" line="79"/>
         <source>Backend image missing</source>
         <translation>Hiányzik a konténerkép</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="69"/>
+        <location filename="../ui/status_pill.py" line="81"/>
         <source>Downloading the OpenMC backend…</source>
         <translation>Az OpenMC háttérszolgáltatás letöltése…</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="71"/>
+        <location filename="../ui/status_pill.py" line="83"/>
+        <source>Loading the OpenMC backend…</source>
+        <translation>Az OpenMC háttérszolgáltatás betöltése…</translation>
+    </message>
+    <message>
+        <location filename="../ui/status_pill.py" line="85"/>
         <source>Starting the OpenMC backend…</source>
         <translation>Az OpenMC háttérszolgáltatás indítása…</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="73"/>
+        <location filename="../ui/status_pill.py" line="87"/>
         <source>Ready · OpenMC {version}</source>
         <translation>Kész · OpenMC {version}</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="75"/>
+        <location filename="../ui/status_pill.py" line="89"/>
         <source>Stopping the backend…</source>
         <translation>A háttérszolgáltatás leállítása…</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="77"/>
+        <location filename="../ui/status_pill.py" line="91"/>
         <source>Backend stopped</source>
         <translation>A háttérszolgáltatás leállt</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="79"/>
+        <location filename="../ui/status_pill.py" line="93"/>
         <source>Backend error</source>
         <translation>Háttérszolgáltatás-hiba</translation>
     </message>
     <message>
-        <location filename="../ui/status_pill.py" line="81"/>
+        <location filename="../ui/status_pill.py" line="95"/>
         <source>Backend not started</source>
         <translation>A háttérszolgáltatás nincs elindítva</translation>
-    </message>
-    <message>
-        <location filename="../ui/status_pill.py" line="88"/>
-        <source>PyVised runs OpenMC inside Docker. Install Docker Desktop (free for education), start it once, then choose Restart backend.</source>
-        <translation>A PyVised Dockerben futtatja az OpenMC-t. Telepítse a Docker Desktopot (oktatási célra ingyenes), indítsa el egyszer, majd válassza a Háttérszolgáltatás újraindítása menüpontot.</translation>
-    </message>
-    <message>
-        <location filename="../ui/status_pill.py" line="93"/>
-        <source>Docker Desktop is installed but its engine did not start. Start Docker Desktop, wait until it says it is running, then choose Restart backend.</source>
-        <translation>A Docker Desktop telepítve van, de a motorja nem indult el. Indítsa el a Docker Desktopot, várja meg, amíg jelzi, hogy fut, majd válassza a Háttérszolgáltatás újraindítása menüpontot.</translation>
-    </message>
-    <message>
-        <location filename="../ui/status_pill.py" line="98"/>
-        <source>The backend image {image} is not on this PC. Developers build it with &apos;just backend-build&apos;.</source>
-        <translation>A konténerkép ({image}) nincs ezen a gépen. Fejlesztők a &apos;just backend-build&apos; paranccsal építhetik meg.</translation>
     </message>
 </context>
 <context>
@@ -2841,37 +3135,37 @@
 <context>
     <name>TrackOverlay</name>
     <message>
-        <location filename="../ui/tracks/overlay.py" line="181"/>
+        <location filename="../ui/tracks/overlay.py" line="185"/>
         <source>history {number}</source>
         <translation>{number}. történet</translation>
     </message>
     <message>
-        <location filename="../ui/tracks/overlay.py" line="183"/>
+        <location filename="../ui/tracks/overlay.py" line="187"/>
         <source>{event} (step {step})</source>
         <translation>{event} ({step}. lépés)</translation>
     </message>
     <message>
-        <location filename="../ui/tracks/overlay.py" line="188"/>
+        <location filename="../ui/tracks/overlay.py" line="192"/>
         <source>weight {weight:.3g}</source>
         <translation>súly {weight:.3g}</translation>
     </message>
     <message>
-        <location filename="../ui/tracks/overlay.py" line="189"/>
+        <location filename="../ui/tracks/overlay.py" line="193"/>
         <source>cell {id}</source>
         <translation>cella {id}</translation>
     </message>
     <message>
-        <location filename="../ui/tracks/overlay.py" line="193"/>
+        <location filename="../ui/tracks/overlay.py" line="197"/>
         <source>void</source>
         <translation>üres</translation>
     </message>
     <message>
-        <location filename="../ui/tracks/overlay.py" line="193"/>
+        <location filename="../ui/tracks/overlay.py" line="197"/>
         <source>material {id}</source>
         <translation>anyag {id}</translation>
     </message>
     <message>
-        <location filename="../ui/tracks/overlay.py" line="207"/>
+        <location filename="../ui/tracks/overlay.py" line="211"/>
         <source>Follow history {number}</source>
         <translation>A(z) {number}. történet követése</translation>
     </message>
@@ -3460,12 +3754,12 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../app.py" line="150"/>
+        <location filename="../app.py" line="166"/>
         <source>PyVised is already running.</source>
         <translation>A PyVised már fut.</translation>
     </message>
     <message>
-        <location filename="../app.py" line="156"/>
+        <location filename="../app.py" line="179"/>
         <source>Choose the workspace folder</source>
         <translation>Válassza ki a munkaterület mappáját</translation>
     </message>

@@ -48,6 +48,7 @@ from ..render.labels import LabelKind
 from ..render.scales import format_value
 from .dialogs.about import AboutDialog
 from .dialogs.settings_dialog import SettingsDialog
+from .dialogs.setup_dialog import SetupDialog, Status
 from .dialogs.text_dialog import TextDialog
 from .geometry.geometry_tab import GeometryTab
 from .simulation.simulation_tab import SimulationTab
@@ -61,6 +62,15 @@ GEOMETRY_SETTINGS = {"render_quality", "plot_background", "line_mode", "line_wid
 RUN_SETTINGS = {"run_threads", "run_entropy_mesh"}
 RUN_END_TIMEOUT_MS = 60_000
 """How long exit and backend restart wait for a stopped run to save its results."""
+SETUP_STATES = {
+    BackendState.DOCKER_MISSING,
+    BackendState.DOCKER_UNAVAILABLE,
+    BackendState.IMAGE_MISSING,
+    BackendState.PULLING,
+    BackendState.LOADING,
+    BackendState.ERROR,
+}
+"""Backend states that open the setup dialog by themselves."""
 
 
 class MainWindow(QMainWindow):
@@ -81,8 +91,10 @@ class MainWindow(QMainWindow):
         self.runs = RunSession(tasks, self)
         self.track_session = TrackSession(tasks, self)
         self.tracks_window: TracksWindow | None = None
+        self.setup_dialog: SetupDialog | None = None
         self._pending_open: Path | None = None
         self._backend_ready = False
+        self._selftest_running = False
         self.setMinimumSize(900, 600)
 
         self.geometry_tab = GeometryTab(self.session, settings, language=self.language)
@@ -105,7 +117,7 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.render_label)
         self.status_pill = StatusPill(self)
         self.statusBar().addPermanentWidget(self.status_pill)
-        self.status_pill.detailsRequested.connect(self.show_backend_details)
+        self.status_pill.setupRequested.connect(self.show_setup)
         self.status_pill.selftestRequested.connect(self.run_selftest)
         self.status_pill.restartRequested.connect(self.restart_backend)
         self.status_pill.logRequested.connect(self.show_backend_log)
@@ -128,6 +140,8 @@ class MainWindow(QMainWindow):
         )
 
         backend.stateChanged.connect(self._on_backend_state)
+        backend.transferChanged.connect(self.status_pill.set_transfer)
+        backend.operationFinished.connect(self._update_actions)
         self._on_backend_state(backend.state.value, backend.detail)
         self._refresh_icons()  # again on every palette change, see changeEvent
         self._update_title()
@@ -173,7 +187,10 @@ class MainWindow(QMainWindow):
         )
         self.act_tracks = self._action(self.tr("Particle &tracks…"), self.show_tracks, "Ctrl+T")
         self.act_tracks.setToolTip(self.tr("Generate particle tracks and play them on the views"))
-        self.act_selftest = self._action(self.tr("Run backend &self-test"), self.run_selftest)
+        self.act_setup = self._action(self.tr("&Backend setup…"), self.show_setup)
+        self.act_selftest = self._action(
+            self.tr("Run backend &self-test"), lambda: self.run_selftest()
+        )
         self.act_backend_log = self._action(self.tr("Backend &log…"), self.show_backend_log)
         self.act_diagnostics = self._action(self.tr("Copy &diagnostics"), self.copy_diagnostics)
         self.act_restart = self._action(self.tr("&Restart backend"), self.restart_backend)
@@ -232,6 +249,7 @@ class MainWindow(QMainWindow):
         tools = bar.addMenu(self.tr("&Tools"))
         tools.addAction(self.act_tracks)
         tools.addSeparator()
+        tools.addAction(self.act_setup)
         tools.addAction(self.act_selftest)
         tools.addAction(self.act_backend_log)
         tools.addAction(self.act_diagnostics)
@@ -319,6 +337,7 @@ class MainWindow(QMainWindow):
         self.act_export_image.setIcon(icon("mdi6.image-move"))
         self.labels_button.setIcon(icon("mdi6.numeric"))
         self.act_settings.setIcon(icon("mdi6.cog-outline"))
+        self.act_setup.setIcon(icon("mdi6.clipboard-check-outline"))
         self.act_selftest.setIcon(icon("mdi6.stethoscope"))
         self.act_restart.setIcon(icon("mdi6.restart"))
         self.tabs.setTabIcon(0, icon("mdi6.cube-outline"))
@@ -418,7 +437,7 @@ class MainWindow(QMainWindow):
         self.act_reload.setEnabled(
             ready and not self.session.busy and self.session.path is not None
         )
-        self.act_selftest.setEnabled(ready)
+        self.act_selftest.setEnabled(ready and not self._selftest_running)
         self.act_restart.setEnabled(not self.backend.busy or not ready)
         shown = self.session.info is not None
         self.act_export_image.setEnabled(shown)
@@ -643,6 +662,11 @@ class MainWindow(QMainWindow):
             self.track_session.set_connection(None)
             self.simulation_tab.set_backend(None)
         self._update_actions()
+        if BackendState(state) in SETUP_STATES:
+            self.show_setup()
+        image_id = self.backend.facts.image_id
+        if ready and image_id and image_id != self.settings.selftest_image:
+            self.run_selftest(auto=True)  # once per new image: the first start, an update
 
     def backend_config(self) -> BackendConfig:
         return BackendConfig.from_settings(self.settings)
@@ -654,59 +678,116 @@ class MainWindow(QMainWindow):
             self._stop_run_and_wait()
         self.backend.restart(self.backend_config())
 
-    def show_backend_details(self) -> None:
-        text = self.status_pill.explanation(
-            self.backend.state.value, self.backend.detail, self.backend.config.image
-        )
-        lines = [
-            text,
-            "",
-            self.tr("Image: {image}").format(image=self.backend.config.image),
-            self.tr("Container: {name}").format(name=self.backend.config.container_name),
-            self.tr("Workspace: {path}").format(path=self.backend.config.workspace),
-        ]
-        if self.backend.connection is not None:
-            lines.append(self.tr("Address: {url}").format(url=self.backend.connection.base_url))
-        QMessageBox.information(self, self.tr("OpenMC backend"), "\n".join(lines))
+    def _setup(self) -> SetupDialog:
+        if self.setup_dialog is None:
+            dialog = SetupDialog(self.backend, self)
+            if self.testAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen):  # --screenshot
+                dialog.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
+            dialog.retryRequested.connect(self.restart_backend)
+            dialog.loadRequested.connect(self.load_backend_image)
+            dialog.removeRequested.connect(self.remove_backend_image)
+            dialog.selftestRequested.connect(lambda: self.run_selftest())
+            dialog.diagnosticsRequested.connect(self.copy_diagnostics)
+            self.setup_dialog = dialog
+        return self.setup_dialog
 
-    def run_selftest(self) -> None:
-        connection = self.backend.connection
-        if connection is None:
-            QMessageBox.information(
-                self, self.tr("Self-test"), self.tr("The backend is not ready yet.")
-            )
+    def show_setup(self) -> None:
+        dialog = self._setup()
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    def load_backend_image(self, path: Path) -> None:
+        if self.runs.running:
+            if not self._confirm_run_ends(exiting=False):
+                return
+            self._stop_run_and_wait()
+        self.backend.load_image(path)
+
+    def remove_backend_image(self) -> None:
+        text = self.tr(
+            "Remove the OpenMC backend image {image} from Docker? This frees about 3.4 GB; "
+            "PyVised downloads the image again at its next start."
+        ).format(image=self.backend.config.image)
+        buttons = QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+        title = self.tr("Remove the backend image")
+        answer = QMessageBox.question(self, title, text, buttons, QMessageBox.StandardButton.Cancel)
+        if answer != QMessageBox.StandardButton.Ok:
             return
+        if self.runs.running:
+            if not self._confirm_run_ends(exiting=False):
+                return
+            self._stop_run_and_wait()
+        self.backend.remove_image()
+
+    def run_selftest(self, auto: bool = False) -> None:
+        """Build, render and run a test model in the backend; the result goes to the setup
+        dialog, which an automatic run (after a new image) shows only on failure."""
+        connection = self.backend.connection
+        dialog = self._setup()
+        if connection is None:
+            self.show_setup()  # it says why the backend is not ready
+            return
+        if self._selftest_running:
+            return
+        self._selftest_running = True
+        image_id = self.backend.facts.image_id or ""
+        dialog.set_selftest(
+            Status.RUNNING,
+            self.tr("running…"),
+            self.tr("Building, rendering and running a small test model…"),
+        )
+        if not auto:
+            self.show_setup()
+        self._update_actions()
+        self.statusBar().showMessage(self.tr("Running the backend self-test…"))
 
         def call() -> SelfTestResult:
             with ApiClient(connection) as api:
                 return api.selftest()
 
-        self.act_selftest.setEnabled(False)
-        self.statusBar().showMessage(self.tr("Running the backend self-test…"))
-        self.tasks.submit(call, on_result=self._show_selftest, on_error=self._selftest_failed)
+        self.tasks.submit(
+            call,
+            on_result=lambda result: self._selftest_done(result, image_id),
+            on_error=self._selftest_failed,
+        )
 
-    def _show_selftest(self, result: SelfTestResult) -> None:
+    def _step_name(self, name: str) -> str:
+        names = {
+            "build": self.tr("build"),
+            "render": self.tr("render"),
+            "transport": self.tr("transport"),
+        }
+        return names.get(name, name)
+
+    def _selftest_done(self, result: SelfTestResult, image_id: str) -> None:
+        self._selftest_running = False
         self.statusBar().clearMessage()
-        self.act_selftest.setEnabled(self.backend.state is BackendState.READY)
-        lines = []
-        for step in result.steps:
-            mark = "✓" if step.ok else "✗"
-            lines.append(f"{mark} {step.name} ({step.seconds:.1f} s) {step.detail}".rstrip())
-        box = QMessageBox(self)
-        box.setWindowTitle(self.tr("Self-test"))
+        self._update_actions()
+        dialog = self._setup()
         if result.ok:
-            box.setIcon(QMessageBox.Icon.Information)
-            box.setText(self.tr("The backend works: it built, rendered and ran a test model."))
-        else:
-            box.setIcon(QMessageBox.Icon.Warning)
-            box.setText(self.tr("The backend self-test failed."))
-        box.setInformativeText("\n".join(lines))
-        box.exec()
+            times = ", ".join(
+                f"{self._step_name(step.name)} {step.seconds:.1f} s" for step in result.steps
+            )
+            if result.k_eff is not None and result.k_eff_std is not None:
+                times += f"; k-eff = {result.k_eff:.4f} ± {result.k_eff_std:.4f}"
+            dialog.set_selftest(Status.OK, self.tr("passed"), times)
+            if image_id:
+                self.settings.selftest_image = image_id
+                self.settings.sync()
+            self.statusBar().showMessage(self.tr("The backend self-test passed."), 6000)
+            return
+        failed = [step for step in result.steps if not step.ok]
+        detail = "\n".join(f"{self._step_name(step.name)}: {step.detail}" for step in failed)
+        dialog.set_selftest(Status.FAILED, self.tr("failed"), detail)
+        self.show_setup()
 
     def _selftest_failed(self, error: Exception) -> None:
+        self._selftest_running = False
         self.statusBar().clearMessage()
-        self.act_selftest.setEnabled(self.backend.state is BackendState.READY)
-        QMessageBox.warning(self, self.tr("Self-test"), str(error))
+        self._update_actions()
+        self._setup().set_selftest(Status.FAILED, self.tr("failed"), str(error))
+        self.show_setup()
 
     def show_backend_log(self) -> None:
         def load() -> None:
@@ -730,13 +811,17 @@ class MainWindow(QMainWindow):
 
     def _diagnostics_text(self) -> str:
         health = self.backend.health
+        facts = self.backend.facts
         lines = [
             f"PyVised {__version__}",
             f"Python {platform.python_version()} · Qt {qVersion()} · PySide6 {PySide6.__version__}",
             f"OS {platform.platform()}",
             f"settings {self.settings.file_path}",
             f"workspace {self.settings.workspace}",
-            f"image {self.backend.config.image}",
+            f"docker {facts.docker or '-'} · engine {facts.engine or '-'}"
+            f" · Docker Desktop {facts.desktop_version or '-'} ({facts.desktop or '-'})",
+            f"docker data {facts.data_dir or '-'} · free {facts.free_bytes or '-'} bytes",
+            f"image {self.backend.config.image} · id {facts.image_id or '-'}",
             f"backend state {self.backend.state.value}: {self.backend.detail}",
             f"health {health.model_dump_json() if health else '-'}",
             f"model {self.session.info.source if self.session.info else '-'}",
@@ -788,7 +873,7 @@ class MainWindow(QMainWindow):
             self.simulation_tab.form.apply_settings()
         if changed & BACKEND_SETTINGS:
             self.restart_backend()
-        elif "keep_backend_running" in changed:
+        elif changed & {"keep_backend_running", "remove_old_images"}:
             self.backend.config = self.backend_config()
 
     def show_about(self) -> None:

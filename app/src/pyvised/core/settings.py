@@ -1,4 +1,8 @@
-"""Persistent user settings: an INI file in `%APPDATA%\\PyVised` (QSettings)."""
+"""Persistent user settings: an INI file in `%APPDATA%\\PyVised` (QSettings).
+
+Keys missing there are read from `%PROGRAMDATA%\\PyVised\\PyVised.ini`, Qt's system-wide
+fallback: the installer's "shared lab PC" option writes machine defaults into it.
+"""
 
 from enum import StrEnum
 from pathlib import Path
@@ -348,6 +352,24 @@ class AppSettings:
     @backend_cpus.setter
     def backend_cpus(self, value: float) -> None:
         self._store.setValue("backend/cpus", max(0.0, float(value)))
+
+    @property
+    def remove_old_images(self) -> bool:
+        """Remove the backend images of earlier versions once the new one works."""
+        return self._bool("backend/remove_old_images", True)
+
+    @remove_old_images.setter
+    def remove_old_images(self, value: bool) -> None:
+        self._store.setValue("backend/remove_old_images", bool(value))
+
+    @property
+    def selftest_image(self) -> str:
+        """Id of the last backend image that passed the self-test (it runs once per image)."""
+        return str(self._store.value("backend/selftest_image", "")).strip()
+
+    @selftest_image.setter
+    def selftest_image(self, value: str) -> None:
+        self._store.setValue("backend/selftest_image", value.strip())
 
     # -- window --------------------------------------------------------------
 
