@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from pyvised_protocol.schemas import ModelInfo, ModelKind, OpenModelRequest
+from pyvised_protocol.schemas import LibraryInfo, ModelInfo, ModelKind, OpenModelRequest
 from pyvised_protocol.sidecar import SIDECAR_NAME, Sidecar
 
 from . import libraries
@@ -311,14 +311,19 @@ class ModelService:
         with self._lock:
             return self._key_locks.setdefault(key, threading.Lock())
 
-    def _library(self, library_id: str | None) -> tuple[str | None, str | None]:
+    def library(self, library_id: str | None) -> LibraryInfo | None:
+        """The library `library_id` (None: the built-in one, if any)."""
         found = libraries.discover(self.config.cross_sections, self.config.custom_data)
         for lib in found:
             if (library_id is None and lib.builtin) or lib.id == library_id:
-                return lib.id, lib.path
+                return lib
         if library_id is None:
-            return None, None
+            return None
         raise ServiceError("unknown_library", f"no nuclear-data library {library_id!r}")
+
+    def _library(self, library_id: str | None) -> tuple[str | None, str | None]:
+        lib = self.library(library_id)
+        return (lib.id, lib.path) if lib is not None else (None, None)
 
     def _read_cache(self, directory: Path) -> dict[str, Any] | None:
         try:

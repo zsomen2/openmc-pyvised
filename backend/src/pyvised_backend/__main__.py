@@ -26,6 +26,8 @@ def _serve(args: argparse.Namespace) -> int:
         port=args.port,
         reload=args.reload,
         reload_dirs=sources if args.reload else None,
+        # open event streams must not hold up the shutdown, which stops the active run
+        timeout_graceful_shutdown=3,
     )
     return 0
 

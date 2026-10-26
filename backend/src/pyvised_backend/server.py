@@ -5,7 +5,7 @@ on bad input, so everything that touches the library runs in a subprocess or a
 worker process.
 """
 
-import os
+import asyncio
 import platform
 import secrets
 import subprocess
@@ -16,13 +16,15 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Annotated, Any, Protocol
 
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Request, status
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from pyvised_protocol import API_PREFIX, PROTOCOL_VERSION, frames
+from pyvised_protocol.runs import LogChunk, RunInfo, RunRequest, RunResults, RunStatus
 from pyvised_protocol.schemas import (
     ErrorInfo,
     HealthInfo,
     InspectResult,
+    LibraryInfo,
     ModelInfo,
     OpenModelRequest,
     SelfTestResult,
@@ -33,11 +35,22 @@ from pyvised_protocol.schemas import (
 from . import __version__, libraries
 from .config import Config
 from .errors import ServiceError
+from .events import EventHub
 from .models import ModelService, OpenedModel
 from .render import RenderPool
+from .runs import RunManager
 from .selftest import RESULT_MARKER
 
-CAPABILITIES = ["selftest", "models", "slices", "levels", "weight_windows", "inspect"]
+CAPABILITIES = [
+    "selftest",
+    "models",
+    "slices",
+    "levels",
+    "weight_windows",
+    "inspect",
+    "runs",
+    "events",
+]
 SELFTEST_TIMEOUT = 600.0
 
 
@@ -99,15 +112,22 @@ def create_app(
     *,
     models: ModelService | None = None,
     renderer: Renderer | None = None,
+    runs: RunManager | None = None,
+    hub: EventHub | None = None,
 ) -> FastAPI:
     config = config or Config.from_env()
     models = models or ModelService(config)
     renderer = renderer or RenderPool(config.render_workers, config.cache_dir / "logs")
+    hub = hub or EventHub()
+    runs = runs or RunManager(config, models, hub)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        hub.bind(asyncio.get_running_loop())
         renderer.start()
         yield
+        hub.close()
+        runs.shutdown()
         renderer.shutdown()
 
     app = FastAPI(title="PyVised backend", version=__version__, lifespan=lifespan)
@@ -126,7 +146,7 @@ def create_app(
             backend_version=__version__,
             openmc_version=_openmc_version(),
             python_version=platform.python_version(),
-            cpu_count=os.cpu_count() or 1,
+            cpu_count=config.cpus,
             capabilities=CAPABILITIES,
             libraries=libraries.discover(config.cross_sections, config.custom_data),
         )
@@ -160,6 +180,62 @@ def create_app(
     def model_inspect(model_id: str, x: float, y: float, z: float) -> InspectResult:
         model = models.get(model_id)
         return renderer.inspect(model.directory, (x, y, z))
+
+    @private.get("/libraries")
+    def library_list() -> list[LibraryInfo]:
+        return libraries.discover(config.cross_sections, config.custom_data)
+
+    # -- runs ----------------------------------------------------------------------------
+
+    @private.post("/runs", status_code=status.HTTP_201_CREATED)
+    def run_start(request: RunRequest) -> RunInfo:
+        return runs.start(request)
+
+    @private.get("/runs")
+    def run_list(model: str) -> list[RunInfo]:
+        return runs.list(model)
+
+    @private.get("/runs/active")
+    def run_active() -> RunStatus | None:
+        info = runs.active
+        return runs.status(info.id) if info is not None else None
+
+    @private.get("/runs/{run_id}")
+    def run_status(run_id: str) -> RunStatus:
+        return runs.status(run_id)
+
+    @private.post("/runs/{run_id}/stop")
+    def run_stop(run_id: str) -> RunInfo:
+        return runs.stop(run_id)
+
+    @private.delete("/runs/{run_id}", status_code=status.HTTP_204_NO_CONTENT)
+    def run_delete(run_id: str) -> Response:
+        runs.delete(run_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    @private.get("/runs/{run_id}/log")
+    def run_log(run_id: str, offset: int = 0) -> LogChunk:
+        return runs.log_text(run_id, offset)
+
+    @private.get("/runs/{run_id}/results")
+    def run_results(run_id: str) -> RunResults:
+        return runs.results(run_id)
+
+    @private.get(
+        "/runs/{run_id}/tallies/{tally_id}",
+        response_class=Response,
+        responses={200: {"content": {frames.CONTENT_TYPE: {}}}},
+    )
+    def run_tally(run_id: str, tally_id: int) -> Response:
+        return Response(content=runs.tally(run_id, tally_id), media_type=frames.CONTENT_TYPE)
+
+    @private.get("/events", response_class=StreamingResponse)
+    async def events() -> StreamingResponse:
+        return StreamingResponse(
+            hub.stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     app.include_router(public)
     app.include_router(private)

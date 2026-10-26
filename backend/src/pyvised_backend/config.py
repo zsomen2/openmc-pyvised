@@ -1,14 +1,32 @@
 """Runtime configuration, read from environment variables set by the desktop app."""
 
 import logging
+import math
 import os
 import secrets
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from pyvised_protocol import TOKEN_ENV
 
 log = logging.getLogger(__name__)
+
+CGROUP_CPU_MAX = Path("/sys/fs/cgroup/cpu.max")
+
+
+def available_cpus() -> int:
+    """CPUs the container may use: its affinity, limited by a cgroup quota (``--cpus``)."""
+    try:
+        count = len(os.sched_getaffinity(0))  # pyright: ignore[reportAttributeAccessIssue]
+    except (AttributeError, OSError):
+        count = os.cpu_count() or 1
+    try:
+        quota, period = CGROUP_CPU_MAX.read_text().split()[:2]
+        if quota != "max":
+            count = min(count, max(1, math.ceil(int(quota) / int(period))))
+    except (OSError, ValueError):
+        pass
+    return max(1, count)
 
 
 @dataclass(frozen=True)
@@ -24,6 +42,8 @@ class Config:
     render_workers: int = 2
     build_timeout: float = 180.0
     """Seconds a builder script (.py, .ipynb) may run."""
+    cpus: int = field(default_factory=available_cpus)
+    """Threads a run gets unless it asks for fewer."""
 
     @classmethod
     def from_env(cls) -> "Config":
