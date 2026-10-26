@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 from fakes import FakeApi
-from PySide6.QtWidgets import QTabWidget
+from PySide6.QtGui import QColor, QPalette
+from PySide6.QtWidgets import QApplication, QTabWidget
 
 from pyvised.backend.client import Connection
 from pyvised.backend.manager import BackendConfig, BackendManager
@@ -75,3 +76,22 @@ def test_colour_mode_controls_stay_in_sync(window: MainWindow):
     assert window.settings.color_mode == "cell"
     window.act_lines.trigger()
     assert window.settings.show_lines is False
+
+
+def test_icons_follow_a_palette_change(qtbot, window: MainWindow):
+    def icon_colour() -> int:
+        image = window.act_open.icon().pixmap(32, 32).toImage()
+        pixels = [image.pixelColor(x, y) for x in range(32) for y in range(32)]
+        return max((p for p in pixels if p.alpha() > 200), key=lambda p: p.alpha()).lightness()
+
+    original = QApplication.palette()
+    dark = QPalette(original)
+    for group in (QPalette.ColorGroup.Active, QPalette.ColorGroup.Inactive):
+        dark.setColor(group, QPalette.ColorRole.WindowText, QColor("white"))
+    try:
+        QApplication.setPalette(dark)  # the change events are posted
+        qtbot.waitUntil(lambda: icon_colour() > 200)  # light icons on a dark palette
+        QApplication.setPalette(original)
+        qtbot.waitUntil(lambda: icon_colour() < 100)  # dark icons again
+    finally:
+        QApplication.setPalette(original)

@@ -7,7 +7,7 @@ import platform
 from pathlib import Path
 
 import PySide6
-from PySide6.QtCore import QSize, Qt, QUrl, qVersion
+from PySide6.QtCore import QEvent, QSize, Qt, QUrl, qVersion
 from PySide6.QtGui import (
     QAction,
     QActionGroup,
@@ -118,8 +118,7 @@ class MainWindow(QMainWindow):
 
         backend.stateChanged.connect(self._on_backend_state)
         self._on_backend_state(backend.state.value, backend.detail)
-        QGuiApplication.styleHints().colorSchemeChanged.connect(self._refresh_icons)
-        self._refresh_icons()
+        self._refresh_icons()  # again on every palette change, see changeEvent
         self._update_title()
         self._restore_window()
 
@@ -317,6 +316,13 @@ class MainWindow(QMainWindow):
         if state is not None:
             self.restoreState(state)
         self.geometry_tab.restore_state(self.settings.geometry_splitter)
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        # a light/dark switch: Qt emits colorSchemeChanged while the palette still has the
+        # old colours, so the icons are re-tinted when the new palette arrives
+        if event.type() in (QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange):
+            self._refresh_icons()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.settings.window_geometry = self.saveGeometry()
