@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "title": {
+    "en": "Fuel rod lattice",
+    "hu": "Fűtőelemrúd-rács"
+  },
+  "description": {
+    "en": "5.1. Create an infinite rectangular lattice. The lattice should be based on a cylinder with a radius of 0.5 cm and a height of 50 cm. The cylinder should contain UO₂ with a density of 10 g/cm³ and a uranium enrichment of 10%. Outside the cylinder, use water with a density of 1 g/cm³. The unit cell dimensions should be 2 × 2 × 70 cm. Plot the lattice. (This part concerns geometry only.)\n5.2. Define the lattice as a universe. Create an empty box with dimensions of 20 × 20 × 70 cm, along with its exterior region. Fill the box with the previously defined universe. Plot the geometry.\n5.3. Investigate what happens when the infinite lattice is placed into a larger or smaller box. Observe how the lattice becomes three-dimensional as the 70 cm dimension is increased.\n5.4. Introduce the fundamentals required to calculate k_eff.\n5.5. Define the input lines required to calculate k_eff for the finite lattice created in 5.2. Define an initial neutron source and determine the multiplication factor of the system.\n5.6. Divide the cylinders and the water regions above and below them into 20 axial sections. Calculate the neutron flux in these sections using 3 energy groups: below 0.5 eV, between 0.5 eV and 0.5 MeV, above 0.5 MeV. Plot the thermal and fast neutron fluxes.\n5.7. Investigate what happens when water is removed from the finite lattice as a moderator.",
+    "hu": "5.1. Készítsünk egy végtelen derékszögű rácsot. A rács alapja egy 0,5 cm sugarú, 50 cm magas henger legyen. A hengerben 10 g/cm³ sűrűségű UO₂ legyen, 10% urándúsítással. A hengeren kívül 1 g/cm³ sűrűségű víz legyen. Az elemi cella mérete 2 × 2 × 70 cm. Rajzoljuk fel a rácsot. (Ez a rész csak a geometriáról szól.)\n5.2. Nevezzük el a rácsot egy univerzumnak. Készítsünk egy 20 × 20 × 70 cm méretű üres dobozt és annak külvilágát. Töltsük meg a dobozt az előbb definiált univerzummal. Rajzoljuk fel.\n5.3. Vizsgáljuk meg, mi történik, ha a végtelen rácsot nagyobb vagy kisebb dobozba töltjük. Nézzük meg, hogyan válik háromdimenzióssá a rács a 70 cm-es élhossz növelésével.\n5.4. Vezessük be a k_eff számításához szükséges alapokat.\n5.5. Definiáljuk az 5.2. feladat véges rácsának k_eff-számításához szükséges bemeneti sorokat. Definiáljunk induló neutronforrást, és határozzuk meg a rendszer sokszorozási tényezőjét.\n5.6. Osszuk fel a hengereket, valamint az alattuk és felettük lévő vizet a tengely mentén 20 részre. Számítsuk ki a neutronfluxust ezekben a részekben, 3 energiacsoportban: 0,5 eV alatt, 0,5 eV és 0,5 MeV között, 0,5 MeV felett. Ábrázoljuk a termikus és a gyors neutronfluxust.\n5.7. Vizsgáljuk meg, mi történik, ha a véges rácsból eltávolítjuk a vizet mint moderátort."
+  },
+  "material_colors": {
+    "1": "#d9822b",
+    "2": "#4a90d9"
+  },
+  "views": [
+    {
+      "basis": "xz",
+      "cut": 1.0
+    },
+    {
+      "basis": "xy",
+      "cut": 0.0
+    }
+  ],
+  "parameters": [
+    {
+      "name": "box_width",
+      "label": {
+        "en": "Box width (x and y)",
+        "hu": "A doboz szélessége (x és y)"
+      },
+      "unit": "cm",
+      "default": 20.0,
+      "minimum": 2.0,
+      "maximum": 80.0,
+      "step": 2.0
+    },
+    {
+      "name": "box_height",
+      "label": {
+        "en": "Box height (z)",
+        "hu": "A doboz magassága (z)"
+      },
+      "unit": "cm",
+      "default": 70.0,
+      "minimum": 10.0,
+      "maximum": 350.0,
+      "step": 10.0
+    },
+    {
+      "name": "water",
+      "label": {
+        "en": "Water around the rods (off: void, 5.7)",
+        "hu": "Víz a rudak körül (kikapcsolva: üres, 5.7)"
+      },
+      "default": 1,
+      "minimum": 0,
+      "maximum": 1,
+      "step": 1
+    }
+  ],
+  "tallies": {
+    "4": {
+      "source_strength": 1.0,
+      "divide_by": "volume",
+      "divisor": "box_width**2*box_height/20",
+      "unit": "1/cm² per neutron",
+      "note": "per source neutron; OpenMC does not divide a mesh flux by the element volume, box_width² × box_height / 20 cm³"
+    }
+  },
+  "run_presets": [
+    {
+      "name": "box",
+      "label": {
+        "en": "5.5–5.6: k-eff in the 20 × 20 × 70 cm box",
+        "hu": "5.5–5.6: k_eff a 20 × 20 × 70 cm-es dobozban"
+      },
+      "params": {
+        "box_width": 20,
+        "box_height": 70,
+        "water": 1
+      },
+      "note": {
+        "en": "kcode 10000 × 120 cycles (20 inactive); tally 4 is the axial flux in three groups.",
+        "hu": "kcode 10000 × 120 ciklus (20 inaktív); a 4-es tally az axiális fluxus három csoportban."
+      }
+    },
+    {
+      "name": "wider",
+      "label": {
+        "en": "5.3: wider box (40 × 40 cm)",
+        "hu": "5.3: szélesebb doboz (40 × 40 cm)"
+      },
+      "params": {
+        "box_width": 40,
+        "box_height": 70,
+        "water": 1
+      },
+      "note": {
+        "en": "Four times as many rods; compare k-eff with the 20 cm box.",
+        "hu": "Négyszer annyi rúd; hasonlítsa össze a k_eff-et a 20 cm-es dobozéval."
+      }
+    },
+    {
+      "name": "taller",
+      "label": {
+        "en": "5.3: taller box, three layers (210 cm)",
+        "hu": "5.3: magasabb doboz, három réteg (210 cm)"
+      },
+      "params": {
+        "box_width": 20,
+        "box_height": 210,
+        "water": 1
+      },
+      "note": {
+        "en": "The lattice repeats along z as well: three layers of rods.",
+        "hu": "A rács z irányban is ismétlődik: három réteg rúd."
+      }
+    },
+    {
+      "name": "dry",
+      "label": {
+        "en": "5.7: no water (void around the rods)",
+        "hu": "5.7: víz nélkül (üres tér a rudak körül)"
+      },
+      "params": {
+        "box_width": 20,
+        "box_height": 70,
+        "water": 0
+      },
+      "note": {
+        "en": "Without the moderator; compare k-eff and the thermal flux with the box preset.",
+        "hu": "Moderátor nélkül; hasonlítsa össze a k_eff-et és a termikus fluxust a dobozos beállítással."
+      }
+    }
+  ]
+}
