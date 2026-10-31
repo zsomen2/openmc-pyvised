@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "title": {
+    "en": "Core in a water tank",
+    "hu": "Zóna vízzel töltött tartályban"
+  },
+  "description": {
+    "en": "9. Starting from the optimal lattice pitch found in Task 7, create a 3 × 3 fuel assembly. Place it into a 5 × 5 core lattice to obtain a reactor core somewhat similar to that of the Training Reactor.\n9.1. Place the finite lattice into an appropriately sized box, then position that box at the center of a water-filled tank with a diameter of 100 cm and a height of 100 cm. Perform a k_eff calculation. If k_eff differs from 1.00 by more than 2%, adjust the uranium enrichment of the fuel.\n9.2. Create neutron- and gamma-flux tallies on the lateral surface of the tank. Calculate the fluxes and investigate the statistical uncertainty achievable with a run time of no more than 10 minutes.\n9.3. Divide the water volume outside the core box into cylindrical annuli with a thickness of 5 cm. Moving outward, double the importance value from one annulus to the next and investigate how the statistical uncertainty achievable in 10 minutes changes.",
+    "hu": "9. A 7. feladatban talált optimális rácsosztásból kiindulva készítsünk egy 3 × 3-as üzemanyag-kazettát. Helyezzük el egy 5 × 5-ös zónarácsban, hogy az Oktatóreaktor aktív zónájához valamelyest hasonló aktív zónát kapjunk.\n9.1. Helyezzük a véges rácsot megfelelő méretű dobozba, majd a dobozt egy 100 cm átmérőjű és 100 cm magas, vízzel megtöltött tartály közepébe. Végezzünk k_eff-számítást. Ha k_eff több mint 2%-kal eltér 1,00-tól, módosítsuk az üzemanyag urándúsítását.\n9.2. Készítsünk neutron- és gammafluxus-tallyket a tartály hengerpalástjára. Számítsuk ki a fluxusokat, és vizsgáljuk meg, milyen statisztikai szórással határozhatók meg legfeljebb 10 perces futásban.\n9.3. A zóna dobozán kívüli víztérfogatot osszuk 5 cm vastag hengergyűrűkre. Kifelé haladva növeljük a gyűrűk importance-értékét kétszeresére, és vizsgáljuk meg, hogyan változik a 10 perc alatt elérhető statisztikai szórás."
+  },
+  "material_colors": {
+    "1": "#d9822b",
+    "2": "#4a90d9"
+  },
+  "parameters": [
+    {
+      "name": "enrichment",
+      "label": {
+        "en": "Uranium enrichment (U-235 by weight, 9.1)",
+        "hu": "Urándúsítás (U-235 tömegarány, 9.1)"
+      },
+      "unit": "%",
+      "default": 10.0,
+      "minimum": 1.0,
+      "maximum": 20.0,
+      "step": 0.5
+    },
+    {
+      "name": "importance_ratio",
+      "label": {
+        "en": "Importance ratio of neighbouring water annuli (1 = none, 9.3)",
+        "hu": "Szomszédos vízgyűrűk importance-aránya (1 = nincs, 9.3)"
+      },
+      "default": 1,
+      "minimum": 1,
+      "maximum": 4,
+      "step": 1
+    }
+  ],
+  "tallies": {
+    "2": {
+      "source_strength": 7.6e15,
+      "divide_by": "area",
+      "divisor": 31415.9265,
+      "unit": "1/(cm²·s)",
+      "note": "fm2 7.6e15: a 100 kW core, P·ν/(200 MeV·k) with ν = 2.43, k = 1; OpenMC does not divide a surface flux by the area, 2·π·50·100 cm² of the tank wall"
+    },
+    "12": {
+      "source_strength": 7.6e15,
+      "divide_by": "area",
+      "divisor": 31415.9265,
+      "unit": "1/(cm²·s)",
+      "note": "fm12 7.6e15: a 100 kW core, P·ν/(200 MeV·k) with ν = 2.43, k = 1; OpenMC does not divide a surface flux by the area, 2·π·50·100 cm² of the tank wall"
+    }
+  },
+  "run_presets": [
+    {
+      "name": "ten_minutes",
+      "label": {
+        "en": "9.2: 10 minutes without importances",
+        "hu": "9.2: 10 perc importance nélkül"
+      },
+      "particles": 10000,
+      "batches": 2000,
+      "inactive": 20,
+      "time_limit": 600,
+      "params": {
+        "importance_ratio": 1
+      },
+      "note": {
+        "en": "Runs until the 10 minute time limit and keeps the last statepoint; note the relative errors and the FOM of tallies 2 and 12.",
+        "hu": "A 10 perces időkorlátig fut, és megtartja a legutóbbi állapotfájlt; jegyezze fel a 2-es és 12-es tally relatív hibáját és FOM-ját."
+      }
+    },
+    {
+      "name": "importance",
+      "label": {
+        "en": "9.3: 10 minutes, importance ×2 per annulus",
+        "hu": "9.3: 10 perc, gyűrűnként kétszeres importance"
+      },
+      "particles": 10000,
+      "batches": 2000,
+      "inactive": 20,
+      "time_limit": 600,
+      "params": {
+        "importance_ratio": 2
+      },
+      "note": {
+        "en": "The same with weight windows that double outward from annulus to annulus; compare the relative errors with 9.2.",
+        "hu": "Ugyanez gyűrűről gyűrűre kifelé kétszeresére növő súlyablakokkal; hasonlítsa össze a relatív hibákat a 9.2-vel."
+      }
+    }
+  ]
+}
