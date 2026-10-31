@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "title": {
+    "en": "Lattice of lattices",
+    "hu": "Rácsok rácsa"
+  },
+  "description": {
+    "en": "6.1. Define a finite lattice with the same configuration as in 5.1–5.2. Create a regular 3 × 3 lattice from it and place it inside a box fitted to the unit cells. Plot the geometry.\n6.2. Remove the central fuel rod and plot the geometry again.\n6.3. Define the finite 3 × 3 lattice inside its box as a universe. Create another 3 × 3 lattice from this universe (a “lattice of lattices”).\nIn this example the lattice element is the 20 × 20 × 70 cm box of 5.2 with its 10 × 10 rods, so the 3 × 3 lattice of it is already the lattice of lattices (60 × 60 × 70 cm); 6.2 removes the middle 2 × 2 rods of every box.",
+    "hu": "6.1. Definiáljunk az 5.1–5.2. feladattal azonos felépítésű véges rácsot. Készítsünk ebből egy szabályos 3 × 3-as rácsot, és helyezzük az elemi cellához illeszkedő dobozba. Rajzoljuk fel.\n6.2. Távolítsuk el a középső üzemanyagpálcát, majd rajzoljuk fel ismét a geometriát.\n6.3. Nevezzük el a dobozba helyezett véges 3 × 3-as rácsot univerzumnak. Készítsünk ebből az univerzumból újabb 3 × 3-as rácsot („rács rácsa”).\nEbben a példában a rács eleme az 5.2. feladat 20 × 20 × 70 cm-es doboza a 10 × 10 pálcájával, így a belőle készült 3 × 3-as rács már maga a rácsok rácsa (60 × 60 × 70 cm); a 6.2. minden doboz középső 2 × 2 pálcáját távolítja el."
+  },
+  "material_colors": {
+    "1": "#d9822b",
+    "2": "#4a90d9"
+  },
+  "views": [
+    {
+      "basis": "xz",
+      "cut": 1.0
+    },
+    {
+      "basis": "xy",
+      "cut": 0.0
+    }
+  ],
+  "parameters": [
+    {
+      "name": "middle_rods",
+      "label": {
+        "en": "Middle 2 × 2 rods of each box (off: removed, 6.2)",
+        "hu": "Minden doboz középső 2 × 2 pálcája (kikapcsolva: eltávolítva, 6.2)"
+      },
+      "default": 1,
+      "minimum": 0,
+      "maximum": 1,
+      "step": 1
+    }
+  ],
+  "run_presets": [
+    {
+      "name": "lattice",
+      "label": {
+        "en": "6.1, 6.3: 3 × 3 boxes of Task 5 (60 × 60 × 70 cm)",
+        "hu": "6.1, 6.3: az 5. feladat dobozából 3 × 3 (60 × 60 × 70 cm)"
+      },
+      "params": {
+        "middle_rods": 1
+      },
+      "note": {
+        "en": "k-eff and the fission rate per rod (tally 4, Plots: mesh heat map). Colour by universe and step through the levels.",
+        "hu": "k_eff és a pálcánkénti hasadási gyakoriság (4-es tally, Grafikonok: hálós hőtérkép). Színezzen univerzum szerint, és lépkedjen a szinteken."
+      }
+    },
+    {
+      "name": "no_middle",
+      "label": {
+        "en": "6.2: without the middle 2 × 2 rods",
+        "hu": "6.2: a középső 2 × 2 pálca nélkül"
+      },
+      "params": {
+        "middle_rods": 0
+      },
+      "note": {
+        "en": "Every box loses its middle 2 × 2 rods; compare k-eff and the fission rates around the holes with 6.1.",
+        "hu": "Minden doboz elveszti a középső 2 × 2 pálcáját; hasonlítsa össze a k_eff-et és a lyukak körüli hasadási gyakoriságot a 6.1-gyel."
+      }
+    }
+  ]
+}

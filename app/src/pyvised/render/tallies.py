@@ -1,6 +1,7 @@
 """Tally and k-eff arithmetic for the Simulation tab, without Qt.
 
-- normalisation (the sidecar's MCNP ``fm``): mean × source × multiplier ÷ volume or area;
+- normalisation (the sidecar's MCNP ``fm``): mean × source × multiplier ÷ volume or area,
+  which may be a formula of the run's builder parameters;
 - MCNP's guideline for relative errors (< 5 % good, 5–10 % fair, ≥ 10 % poor) and the
   figure of merit 1/(R²T), T in minutes of active batches;
 - table rows and CSV, one column per filter;
@@ -14,7 +15,7 @@ varies fastest, and mesh bins run with the first mesh index fastest.
 import csv
 import io
 import math
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 
@@ -61,13 +62,20 @@ def figure_of_merit(rel: float | None, seconds: float | None) -> float | None:
     return 1.0 / (rel * rel * seconds / 60.0)
 
 
-def factor(norm: TallyNormalisation | None) -> float:
-    """What the sidecar's normalisation multiplies a tally with (1 without one)."""
+def factor(norm: TallyNormalisation | None, params: Mapping[str, float] | None = None) -> float:
+    """What the sidecar's normalisation multiplies a tally with (1 without one) in a run with
+    the builder parameters `params`; NaN when its divisor formula needs a parameter the run
+    does not have."""
     if norm is None:
         return 1.0
     value = norm.source_strength * norm.multiplier
-    if norm.divide_by != "none" and norm.divisor:
-        value /= norm.divisor
+    if norm.divide_by != "none":
+        try:
+            divisor = norm.divisor_value(params or {})
+        except ValueError:
+            return math.nan
+        if divisor:
+            value /= divisor
     return value
 
 
@@ -170,6 +178,7 @@ def csv_text(
     std: np.ndarray,
     norm: TallyNormalisation | None = None,
     seconds: float | None = None,
+    params: Mapping[str, float] | None = None,
 ) -> str:
     """The tally as CSV: numeric bin columns (edges in eV, 1-based mesh indices), values."""
     header: list[str] = []
@@ -184,7 +193,7 @@ def csv_text(
         else:
             header.append(title)
     header += ["nuclide", "score", "mean", "std. dev.", "rel. err.", "FOM"]
-    scale = factor(norm)
+    scale = factor(norm, params)
     if norm is not None:
         header += [f"normalised{f' [{norm.unit}]' if norm.unit else ''}", "normalised std. dev."]
     out = io.StringIO()

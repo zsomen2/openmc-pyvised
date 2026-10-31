@@ -566,7 +566,7 @@ wheels = [
 
 [[package]]
 name = "pyvised"
-version = "0.1.0a0"
+version = "1.0.1"
 source = { editable = "app" }
 dependencies = [
     { name = "httpx" },
@@ -589,7 +589,7 @@ requires-dist = [
 
 [[package]]
 name = "pyvised-backend"
-version = "0.1.0a0"
+version = "1.0.1"
 source = { editable = "backend" }
 dependencies = [
     { name = "fastapi" },
@@ -606,7 +606,7 @@ requires-dist = [
 
 [[package]]
 name = "pyvised-protocol"
-version = "0.1.0a0"
+version = "1.0.1"
 source = { editable = "protocol" }
 dependencies = [
     { name = "numpy" },

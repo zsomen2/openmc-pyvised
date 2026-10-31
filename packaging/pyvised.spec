@@ -20,6 +20,7 @@ from PyInstaller.utils.win32.versioninfo import (
 ROOT = Path(SPECPATH).parent
 APP = ROOT / "app"
 PACKAGE = APP / "src" / "pyvised"
+EXAMPLES = ROOT / "examples"
 VERSION = importlib.metadata.version("pyvised")
 NUMBERS = (*(int(n) for n in re.findall(r"\d+", VERSION)[:3]), 0)
 """Windows wants four numbers; a pre-release (1.0.0rc1) gets those of its final version."""
@@ -115,6 +116,12 @@ datas = [
     (str(TRANSLATION), "pyvised/i18n"),
     (str(ROOT / "LICENSE"), "."),
 ]
+# the example models (Tools > Examples), without caches and run histories
+for path in sorted(EXAMPLES.rglob("*")):
+    relative = path.relative_to(EXAMPLES)
+    skipped = {"__pycache__", "runs"} & set(relative.parts) or path.suffix == ".pyc"
+    if path.is_file() and not skipped:
+        datas.append((str(path), str(Path("examples") / relative.parent)))
 for distribution in LICENSED:
     datas += copy_metadata(distribution)
 

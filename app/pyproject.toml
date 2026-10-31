@@ -1,6 +1,6 @@
 [project]
 name = "pyvised"
-version = "0.1.0a0"
+version = "1.0.1"
 description = "GUI for OpenMC: geometry visualisation and simulation control"
 requires-python = ">=3.13"
 license = "GPL-3.0-or-later"

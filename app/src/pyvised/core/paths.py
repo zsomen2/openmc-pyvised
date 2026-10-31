@@ -32,6 +32,14 @@ def i18n_dir() -> Path:
     return PACKAGE_DIR / "i18n"
 
 
+def examples_dir() -> Path:
+    """Example models of the course tasks: in the bundle, or `examples/` of a source checkout."""
+    bundle = getattr(sys, "_MEIPASS", None)
+    if bundle:
+        return Path(bundle) / "examples"
+    return PACKAGE_DIR.parents[2] / "examples"
+
+
 def local_data_dir() -> Path:
     """Per-user, per-machine data: logs, lock file (`%LOCALAPPDATA%\\PyVised`)."""
     base = os.environ.get("LOCALAPPDATA")

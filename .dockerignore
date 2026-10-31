@@ -1,9 +1,10 @@
-# The backend image only needs these two packages; everything else (app/, docs/,
-# models/, misc/, .venv/) stays out of the build context — docs/ and models/ must
-# never end up in the public image.
+# The backend image only needs these two packages, and its test stage the example models;
+# everything else (app/, docs/, models/, misc/, .venv/) stays out of the build context —
+# docs/ and models/ must never end up in the public image.
 *
 !protocol/
 !backend/
+!examples/
 **/__pycache__
 **/*.py[cod]
 **/.pytest_cache

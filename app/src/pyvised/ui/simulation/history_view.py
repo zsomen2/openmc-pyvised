@@ -291,10 +291,12 @@ class HistoryView(QWidget):
             elif kind is not None:
                 tally = next((t for t in results.tallies if t.id == kind[1]), None)
                 if tally is not None and kind[2] < len(tally.totals):
-                    scale = tm.factor(self.sidecar.tallies.get(tally.id) if self.sidecar else None)
+                    norm = self.sidecar.tallies.get(tally.id) if self.sidecar else None
+                    scale = tm.factor(norm, run.params)
                     total = tally.totals[kind[2]]
-                    value = total.value * scale
-                    std = total.std * scale if total.std is not None else None
+                    if math.isfinite(scale):
+                        value = total.value * scale
+                        std = total.std * scale if total.std is not None else None
             out.append((run, value, std))
         return out
 

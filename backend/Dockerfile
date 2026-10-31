@@ -40,6 +40,8 @@ RUN micromamba install --yes --name base --channel conda-forge pytest httpx \
 COPY --chown=$MAMBA_USER:$MAMBA_USER protocol/ /src/protocol/
 COPY --chown=$MAMBA_USER:$MAMBA_USER backend/ /src/backend/
 RUN pip install --no-cache-dir --no-deps /src/protocol /src/backend
+# the example models of the app (Tools > Examples), checked by backend/tests/test_example_models.py
+COPY --chown=$MAMBA_USER:$MAMBA_USER examples/ /src/examples/
 ENTRYPOINT ["/usr/local/bin/_entrypoint.sh"]
 CMD ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "/src/protocol/tests", "/src/backend/tests"]
 

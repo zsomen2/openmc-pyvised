@@ -265,7 +265,7 @@ class SummaryView(QWidget):
         compared = []
         for tally in results.tallies:
             norm = normalisations.get(tally.id)
-            scale = tm.factor(norm)
+            scale = tm.factor(norm, run.params)
             unit = norm.unit if norm is not None else ""
             for nuclide, score, total in tm.totals(tally):
                 rel = tm.rel_err(total.value, total.std)

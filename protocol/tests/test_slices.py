@@ -4,7 +4,14 @@ import numpy as np
 import pytest
 
 from pyvised_protocol.schemas import InspectResult, PathStep, SliceRequest
-from pyvised_protocol.sidecar import SIDECAR_NAME, Sidecar, update_sidecar
+from pyvised_protocol.sidecar import (
+    SIDECAR_NAME,
+    Sidecar,
+    TallyNormalisation,
+    evaluate_formula,
+    formula_names,
+    update_sidecar,
+)
 from pyvised_protocol.slices import OUTSIDE, decode_slice, encode_slice
 
 
@@ -81,3 +88,34 @@ def test_update_sidecar_creates_the_file_and_rejects_bad_values(tmp_path):
     with pytest.raises(ValueError):
         update_sidecar(tmp_path, {"importance_lower_bound": -1})
     assert Sidecar.model_validate_json((tmp_path / SIDECAR_NAME).read_bytes()).universe_colors
+
+
+def test_divisor_formulas_of_the_builder_parameters():
+    assert formula_names("4*pi*radius**2") == {"radius"}
+    assert formula_names("2 * pi * (r + t) * (-h1 + h2)") == {"r", "t", "h1", "h2"}
+    assert evaluate_formula("4*pi*radius**2", {"radius": 3}) == pytest.approx(113.0973355)
+    assert evaluate_formula("-(1 - 2) / 4", {}) == 0.25
+    for bad in ("__import__('os')", "radius.real", "[1]", "'a'", "True", "r if r else 1", "1 +"):
+        with pytest.raises(ValueError):
+            formula_names(bad)
+    for bad, params in (("r", {}), ("1/0", {}), ("(-1)**0.5", {}), ("10.0**400", {})):
+        with pytest.raises(ValueError):
+            evaluate_formula(bad, params)
+    norm = TallyNormalisation(divide_by="area", divisor="4*pi*radius**2")
+    assert norm.divisor_value({"radius": 1}) == pytest.approx(4 * np.pi)
+    assert TallyNormalisation(divisor=12.5).divisor_value({}) == 12.5
+    with pytest.raises(ValueError):
+        TallyNormalisation(divisor="radius +")
+
+
+def test_divisor_formulas_must_use_builder_parameters(tmp_path):
+    parameters = [{"name": "radius", "default": 3}]
+    tallies = {"2": {"divide_by": "area", "divisor": "4*pi*radius**2"}}
+    sidecar = Sidecar.model_validate({"parameters": parameters, "tallies": tallies})
+    assert sidecar.tallies[2].divisor == "4*pi*radius**2"
+    fixed = Sidecar.model_validate({"tallies": {"2": {"divisor": "150.5"}}})
+    assert fixed.tallies[2].divisor_value({}) == pytest.approx(150.5)
+    with pytest.raises(ValueError, match="radius, which is not a builder parameter"):
+        Sidecar.model_validate({"tallies": tallies})
+    with pytest.raises(ValueError):
+        update_sidecar(tmp_path, {"tallies": tallies})

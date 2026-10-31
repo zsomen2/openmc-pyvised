@@ -5,8 +5,8 @@ with geometry visualisation and simulation controls, made for teaching Monte Car
 transport. OpenMC does not run natively on Windows, so PyVised starts and manages it in a
 Docker container in the background; you only see one window.
 
-**Status:** alpha (0.1.0a0), the first release for testing on lab PCs. Example models for the
-course tasks follow in a later version.
+**Status:** 1.0.1, the first release with all the main features. Example models of the course
+tasks (Tools › Examples) are being added one by one.
 
 - **Geometry:** open an OpenMC model and inspect it in two linked slice views coloured by
   material, cell, universe (at any nesting level), density, temperature or importance
@@ -29,6 +29,11 @@ course tasks follow in a later version.
   a faded geometry. Filters by history, particle type and energy; only the part near each cut
   plane if wanted; a followed history lists its events. In eigenvalue models a fission ends
   the history, as in the simulation.
+- **Input:** read the model's own code without leaving the app: the builder or notebook and
+  the other `.py`/`.ipynb` files of its folder, with line numbers, Python colours, notebooks
+  shown as their cells, find and go to line. It follows edits made in any editor ("Open in
+  editor" takes VS Code or Notepad, so a builder never runs by accident), and for a run it
+  shows the copy of the code that run used.
 
 ## Models
 
@@ -41,15 +46,21 @@ course tasks follow in a later version.
   parameters arrive as JSON in `PYVISED_PARAMS`.
 - An optional `pyvised.json` next to the model adds a title and description in English and
   Hungarian, the initial views, colours (the app saves the colours you choose there), tally
-  normalisation, builder parameters, run presets, reference results (optionally for given
+  normalisation (the volume or area may be a formula of the builder parameters, such as
+  `4*pi*radius**2`), builder parameters, run presets, reference results (optionally for given
   parameter values), β_eff and the weight-window lower bound that stands for importance 1
   (default 0.5).
 - Runs live next to the model in `runs/<date-time>[_label]/`: the patched copy of the
   exported model (the source is never changed), OpenMC's output and statepoints,
-  `pyvised_run.json` and `pyvised_results.json`.
+  `pyvised_run.json` and `pyvised_results.json`, and in `input/` a copy of the model's
+  `.py`/`.ipynb` files as they were when the run started.
 - Builders may use `pyvised_course`, a helper module in the backend image for models that
   mirror an MCNP deck: `lat=1` lattices, `TR`/`*TR` transformations and `trcl`, densities as
   written on cell cards, and cell importances as weight windows.
+- Tools › Examples opens the example models of the course tasks, each with the task's text
+  as its description. The first time, the example is copied into `examples\` of the
+  workspace, so you work on your own copy; a copy you changed can be restored to the original
+  (its runs stay).
 - PyVised watches the model's folder and offers to reload it when a file changes.
 - Besides the built-in ENDF/B-VII.1 library, folders with a `cross_sections.xml` (for example
   a library from [openmc.org](https://openmc.org/data)) can be added in Settings › Backend;

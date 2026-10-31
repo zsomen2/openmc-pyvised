@@ -46,6 +46,7 @@ def tab(qtbot, settings, monkeypatch, tmp_path: Path):
     runs = RunSession(tasks)
     runs.set_connection(Connection("http://127.0.0.1:1", "t"))
     widget = SimulationTab(session, runs, settings)  # type: ignore[arg-type]
+    session.setParent(widget)  # its queued answers go with the widget
     qtbot.addWidget(widget)
     widget.resize(1500, 900)
     widget.show()
@@ -238,6 +239,11 @@ def test_normalisation_is_saved_in_the_sidecar(qtbot, tab: SimulationTab):
     sidecar = tab.session.info.sidecar
     assert sidecar is not None and sidecar.tallies[2].multiplier == 2.0
     assert sidecar.tallies[2].divisor == pytest.approx(1.25e5)
+    panel.divisor.setText("2*pi*r*h")
+    assert panel.value().divisor == "2*pi*r*h"
+    panel.divisor.setText("2*pi*r*")
+    with pytest.raises(ValueError):
+        panel.value()
     panel.remove.click()
     assert 2 not in tab.session.info.sidecar.tallies  # type: ignore[union-attr]
 
@@ -375,3 +381,16 @@ def test_a_history_refresh_keeps_the_result_views(qtbot, tab: SimulationTab):
         tab.runs.refresh_history()
     assert tab.plots.kind.currentIndex() == 1 and tab.plots.data is not None
     assert tab.tallies.normalisation.multiplier.text() == "7"
+
+
+def test_the_shown_run_is_announced(qtbot, tab: SimulationTab, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+
+    qtbot.waitUntil(lambda: tab.selected == "run2")
+    shown: list[str | None] = []
+    tab.runSelected.connect(shown.append)
+    tab.select("run1", pinned=True)
+    tab.select("run1", pinned=True)
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Yes)
+    tab.delete_run("run1")
+    assert shown == ["run1", None]

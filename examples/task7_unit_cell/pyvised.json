@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "title": {
+    "en": "Unit cell and optimal pitch",
+    "hu": "Elemi cella és optimális rácsosztás"
+  },
+  "description": {
+    "en": "7.1. Create a box with dimensions of 2 × 2 × 70 cm and fill it with the unit cell from 5.1.\n7.2. Apply reflective boundary conditions to the vertical walls of the box.\n7.3. Perform multiplication-factor calculations for different unit-cell dimensions. Plot the resulting k_eff values as a function of lattice pitch.\n7.4. Determine the optimal lattice pitch from the graph.\n7.5. Create a finite lattice using the optimal lattice pitch. Adjust the dimensions of the enclosing box so that the finite system has a k_eff value of 1.00 ± 1%.\n7.6. Investigate how the k_eff value of the resulting critical system depends on water density. Use the following water densities: 1.00; 0.95; 0.90; 0.85; 0.80; 0.75 g/cm³, and, if necessary, 1.05 and 1.10 g/cm³.\n7.7. Determine where the system becomes undermoderated.\n7.8. Repeat the investigation in 7.6 with boron mixed into the water, simulating an increase in boric acid concentration.",
+    "hu": "7.1. Készítsünk egy 2 × 2 × 70 cm-es dobozt, és töltsük meg az 5.1. feladat elemi cellájával.\n7.2. A doboz függőleges falaira állítsunk be tükrös határfeltételt.\n7.3. Végezzünk sokszorozásitényező-számításokat különböző elemicella-méretek mellett. Ábrázoljuk a kapott k_eff-értékeket a rácsosztás függvényében.\n7.4. Határozzuk meg a grafikonból az optimális rácsosztást.\n7.5. Az optimális rácsosztással készítsünk véges rácsot. Módosítsuk a befoglaló doboz méretét úgy, hogy a véges rendszer k_eff-értéke 1,00 ± 1% legyen.\n7.6. Vizsgáljuk meg az így kapott kritikus rendszer k_eff-értékének függését a vízsűrűségtől. Használjuk a következő vízsűrűségeket: 1,00; 0,95; 0,90; 0,85; 0,80; 0,75 g/cm³, és szükség esetén 1,05 és 1,10 g/cm³.\n7.7. Határozzuk meg, hol lesz a rendszer alulmoderált.\n7.8. Ismételjük meg a 7.6. feladat vizsgálatát úgy, hogy bórt keverünk a vízbe, a bórsavkoncentráció növelését szimulálva."
+  },
+  "material_colors": {
+    "1": "#d9822b",
+    "2": "#4a90d9"
+  },
+  "parameters": [
+    {
+      "name": "pitch",
+      "label": {
+        "en": "Lattice pitch (unit cell width)",
+        "hu": "Rácsosztás (az elemi cella szélessége)"
+      },
+      "unit": "cm",
+      "default": 2.0,
+      "minimum": 1.1,
+      "maximum": 5.0,
+      "step": 0.1
+    },
+    {
+      "name": "finite",
+      "label": {
+        "en": "Finite lattice (7.5; off: unit cell with reflective walls)",
+        "hu": "Véges rács (7.5; kikapcsolva: elemi cella tükrös falakkal)"
+      },
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "step": 1
+    },
+    {
+      "name": "rods",
+      "label": {
+        "en": "Rods per side of the finite lattice",
+        "hu": "Pálcák száma a véges rács egy oldalán"
+      },
+      "default": 10,
+      "minimum": 2,
+      "maximum": 40,
+      "step": 1
+    },
+    {
+      "name": "water_density",
+      "label": {
+        "en": "Water density",
+        "hu": "Vízsűrűség"
+      },
+      "unit": "g/cm³",
+      "default": 1.0,
+      "minimum": 0.1,
+      "maximum": 1.2,
+      "step": 0.05
+    },
+    {
+      "name": "boron_ppm",
+      "label": {
+        "en": "Boron in the water (by weight)",
+        "hu": "Bór a vízben (tömegarány)"
+      },
+      "unit": "ppm",
+      "default": 0.0,
+      "minimum": 0.0,
+      "maximum": 5000.0,
+      "step": 100.0
+    }
+  ],
+  "run_presets": [
+    {
+      "name": "cell",
+      "label": {
+        "en": "7.1–7.4: unit cell with reflective walls",
+        "hu": "7.1–7.4: elemi cella tükrös falakkal"
+      },
+      "params": {
+        "finite": 0
+      },
+      "note": {
+        "en": "Run several pitches, then compare the runs in the history with k-eff against \"pitch\".",
+        "hu": "Futtasson több rácsosztással, majd az Előzmények lapon hasonlítsa össze őket: k_eff a „pitch” függvényében."
+      }
+    },
+    {
+      "name": "finite",
+      "label": {
+        "en": "7.5–7.8: finite lattice",
+        "hu": "7.5–7.8: véges rács"
+      },
+      "params": {
+        "finite": 1
+      },
+      "note": {
+        "en": "Set the pitch you found in 7.4, then change the rods per side until k-eff = 1.00 ± 1 %. With that lattice vary the water density (7.6) and the boron (7.8).",
+        "hu": "Állítsa be a 7.4-ben talált rácsosztást, majd változtassa a pálcák számát, amíg k_eff = 1,00 ± 1 %. Ezzel a ráccsal változtassa a vízsűrűséget (7.6) és a bórt (7.8)."
+      }
+    }
+  ]
+}

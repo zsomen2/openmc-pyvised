@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "title": {
+    "en": "Iron sphere with a point source",
+    "hu": "Vasgömb pontforrással"
+  },
+  "description": {
+    "en": "Create a solid iron sphere with a density of 7.85 g/cm³. Place a point gamma-photon source with a source strength of 1E6/s at its center. Investigate the photon flux at the surface of the sphere as a function of the sphere's radius. Start with a sphere of 3 cm radius.",
+    "hu": "Készítsünk egy tömör vasgömböt, amelynek sűrűsége 7,85 g/cm³. Helyezzünk a közepébe egy pontszerű, 1E6/s forráserősségű gammafoton-forrást. Vizsgáljuk meg a fotonfluxust a gömb felületén a gömb sugarának függvényében. Induljunk 3 cm sugarú gömbből."
+  },
+  "material_colors": {
+    "1": "#8a939b"
+  },
+  "parameters": [
+    {
+      "name": "radius",
+      "label": {
+        "en": "Sphere radius",
+        "hu": "A gömb sugara"
+      },
+      "unit": "cm",
+      "default": 3.0,
+      "minimum": 0.5,
+      "maximum": 20.0,
+      "step": 0.5
+    },
+    {
+      "name": "energy",
+      "label": {
+        "en": "Photon energy",
+        "hu": "Fotonenergia"
+      },
+      "unit": "MeV",
+      "default": 1.0,
+      "minimum": 0.05,
+      "maximum": 10.0,
+      "step": 0.1
+    }
+  ],
+  "tallies": {
+    "2": {
+      "source_strength": 1000000.0,
+      "divide_by": "area",
+      "divisor": "4*pi*radius**2",
+      "unit": "1/(cm²·s)",
+      "note": "fm2 1e6: 1e6 photons/s; OpenMC does not divide a surface flux by the area, 4·π·r² of surface 1"
+    },
+    "12": {
+      "source_strength": 1000000.0,
+      "divide_by": "area",
+      "divisor": "4*pi*radius**2",
+      "unit": "1/(cm²·s)",
+      "note": "fm12 1e6: 1e6 photons/s; OpenMC does not divide a surface flux by the area, 4·π·r² of surface 1"
+    }
+  },
+  "references": [
+    {
+      "name": "uncollided flux, r = 1 cm (analytic)",
+      "tally": 12,
+      "value": 49737.0,
+      "unit": "1/(cm²·s)",
+      "source": "S·exp(−μr)/(4πr²), μ/ρ = 0.05987 cm²/g (iron, 1 MeV, ENDF/B-VII.1 photon data)",
+      "params": {
+        "radius": 1.0,
+        "energy": 1.0
+      }
+    },
+    {
+      "name": "uncollided flux, r = 3 cm (analytic)",
+      "tally": 12,
+      "value": 2158.9,
+      "unit": "1/(cm²·s)",
+      "source": "S·exp(−μr)/(4πr²), μ/ρ = 0.05987 cm²/g (iron, 1 MeV, ENDF/B-VII.1 photon data)",
+      "params": {
+        "radius": 3.0,
+        "energy": 1.0
+      }
+    },
+    {
+      "name": "uncollided flux, r = 6 cm (analytic)",
+      "tally": 12,
+      "value": 131.78,
+      "unit": "1/(cm²·s)",
+      "source": "S·exp(−μr)/(4πr²), μ/ρ = 0.05987 cm²/g (iron, 1 MeV, ENDF/B-VII.1 photon data)",
+      "params": {
+        "radius": 6.0,
+        "energy": 1.0
+      }
+    },
+    {
+      "name": "uncollided flux, r = 10 cm (analytic)",
+      "tally": 12,
+      "value": 7.2396,
+      "unit": "1/(cm²·s)",
+      "source": "S·exp(−μr)/(4πr²), μ/ρ = 0.05987 cm²/g (iron, 1 MeV, ENDF/B-VII.1 photon data)",
+      "params": {
+        "radius": 10.0,
+        "energy": 1.0
+      }
+    }
+  ],
+  "run_presets": [
+    {
+      "name": "quick",
+      "label": {
+        "en": "Quick look (10 × 10000 photons)",
+        "hu": "Gyors próba (10 × 10000 foton)"
+      },
+      "particles": 10000,
+      "batches": 10,
+      "note": {
+        "en": "1e5 photons in a few seconds; enough for radii up to about 5 cm.",
+        "hu": "1e5 foton néhány másodperc alatt; kb. 5 cm-es sugárig elegendő."
+      }
+    },
+    {
+      "name": "large",
+      "label": {
+        "en": "Large radii (100 × 100000 photons)",
+        "hu": "Nagy sugarak (100 × 100000 foton)"
+      },
+      "particles": 100000,
+      "batches": 100,
+      "note": {
+        "en": "1e7 photons, about a minute on 4 threads; for radii above 10 cm.",
+        "hu": "1e7 foton, kb. 1 perc 4 szálon; 10 cm feletti sugarakhoz."
+      }
+    }
+  ]
+}

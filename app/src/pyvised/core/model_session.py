@@ -199,6 +199,12 @@ class ModelSession(QObject):
         self._watcher.addPaths([str(path), str(path.parent)])
         self._signature = folder_signature(path)
 
+    def accept_file_changes(self) -> None:
+        """Take the model folder's files as they are now, after the app replaced them itself
+        (and opens the model again): no "files changed" for that."""
+        if self.path is not None:
+            self._signature = folder_signature(self.path)
+
     def _schedule_check(self, *args) -> None:
         self._check_timer.start()
 

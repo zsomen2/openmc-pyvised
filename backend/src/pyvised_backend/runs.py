@@ -2,7 +2,8 @@
 
 Starting a run opens (exports) the model with the run's parameters and
 library, copies the export to ``<model folder>/runs/<stamp>[_label]/``,
-patches the run settings into the copy (`runxml`) and starts
+keeps the model's own code in its `INPUT_FOLDER` (students change the builder
+between runs), patches the run settings into the copy (`runxml`) and starts
 ``openmc -s <threads>`` there. A reader thread appends OpenMC's output to
 `LOG_FILE`, parses it (`runlog`) and publishes progress, log text and state
 changes as events, at most every `FLUSH_INTERVAL`. A statepoint is complete
@@ -40,6 +41,7 @@ from typing import Any
 
 from pyvised_protocol import PROTOCOL_VERSION, frames
 from pyvised_protocol.runs import (
+    INPUT_FOLDER,
     LOG_FILE,
     RESULTS_FILE,
     RUN_FILE,
@@ -83,6 +85,8 @@ HEARTBEAT_FILE = "pyvised_heartbeat"
 HEARTBEAT_INTERVAL = 10.0
 HEARTBEAT_STALE = 30.0
 """[s] after which a run without heartbeat counts as interrupted."""
+INPUT_SUFFIXES = (".py", ".ipynb")
+"""The model's own code (builder, notebook, helper modules), kept with each run."""
 _UNSAFE = re.compile(r"[^\w.-]+")
 
 
@@ -120,6 +124,26 @@ def complete_utf8(data: bytes) -> int:
 
 def _tail(text: str, lines: int = 15) -> str:
     return "\n".join(text.strip().splitlines()[-lines:])
+
+
+def copy_input(source: Path, folder: Path) -> list[str]:
+    """Copy the model file `source` and the other `.py`/`.ipynb` files next to it into the
+    run folder's `INPUT_FOLDER`; nothing for an XML model. Returns the names copied. A
+    failure only costs the copies (it is logged), not the run."""
+    if source.suffix.lower() not in INPUT_SUFFIXES:
+        return []
+    target = folder / INPUT_FOLDER
+    copied = []
+    try:
+        files = [p for p in sorted(source.parent.iterdir()) if p.suffix.lower() in INPUT_SUFFIXES]
+        target.mkdir()
+        for path in files:
+            if path.is_file():
+                shutil.copy2(path, target / path.name)
+                copied.append(path.name)
+    except OSError as exc:
+        log.warning("keeping the input of run %s failed: %s", folder.name, exc)
+    return copied
 
 
 def alive_elsewhere(folder: Path) -> bool:
@@ -263,6 +287,7 @@ class RunManager:
             for item in opened.directory.iterdir():
                 if item.is_file() and item.name != "info.json":
                     shutil.copy2(item, folder / item.name)
+            copy_input(source, folder)
             threads = min(request.settings.threads or self.config.cpus, self.config.cpus)
             plan, warnings = patch_model(
                 folder / "model.xml", request.settings, threads, opened.info.bounding_box

@@ -1,4 +1,4 @@
-"""The main window: Geometry and Simulation tabs, menus, toolbar and the backend status."""
+"""The main window: Geometry, Simulation and Input tabs, menus, toolbar and the backend status."""
 
 import itertools
 import logging
@@ -36,8 +36,10 @@ from pyvised_protocol.schemas import ModelInfo, SelfTestResult, WeightWindowLaye
 from .. import REPOSITORY_URL, __version__
 from ..backend.client import ApiClient
 from ..backend.manager import IMAGE_ENV, BackendConfig, BackendManager, BackendState
+from ..core.examples import CopyState, Example, find_examples
 from ..core.icons import icon
 from ..core.model_session import MODEL_SUFFIXES, ModelSession
+from ..core.paths import examples_dir
 from ..core.run_session import RunSession
 from ..core.settings import AppSettings, ReloadPolicy
 from ..core.tasks import TaskRunner
@@ -51,6 +53,7 @@ from .dialogs.settings_dialog import SettingsDialog
 from .dialogs.setup_dialog import SetupDialog, Status
 from .dialogs.text_dialog import TextDialog
 from .geometry.geometry_tab import GeometryTab
+from .input.input_tab import InputTab
 from .simulation.simulation_tab import SimulationTab
 from .status_pill import StatusPill
 from .tracks.tracks_window import TracksWindow
@@ -101,12 +104,16 @@ class MainWindow(QMainWindow):
         self.simulation_tab = SimulationTab(
             self.session, self.runs, settings, language=self.language
         )
+        self.input_tab = InputTab(self.session, settings)
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
         self.tabs.addTab(self.geometry_tab, self.tr("Geometry"))
         self.tabs.addTab(self.simulation_tab, self.tr("Simulation"))
+        self.tabs.addTab(self.input_tab, self.tr("Input"))
+        self.tabs.currentChanged.connect(self._tab_changed)
         self.setCentralWidget(self.tabs)
 
+        self.examples, _problems = find_examples(examples_dir())
         self._create_actions()
         self._create_menus()
         self._create_toolbar()
@@ -138,6 +145,8 @@ class MainWindow(QMainWindow):
         self.simulation_tab.statusMessage.connect(
             lambda text: self.statusBar().showMessage(text, 8000)
         )
+        self.simulation_tab.runSelected.connect(self._run_selected)
+        self.input_tab.statusMessage.connect(lambda text: self.statusBar().showMessage(text, 6000))
 
         backend.stateChanged.connect(self._on_backend_state)
         backend.transferChanged.connect(self.status_pill.set_transfer)
@@ -247,6 +256,13 @@ class MainWindow(QMainWindow):
         view.addSeparator()
         view.addAction(self.act_reset_views)
         tools = bar.addMenu(self.tr("&Tools"))
+        self.examples_menu = tools.addMenu(self.tr("&Examples"))
+        for example in self.examples:
+            title = example.title(self.language).replace("&", "&&")
+            action = self.examples_menu.addAction(f"{example.number}. {title}")
+            action.triggered.connect(lambda checked, e=example: self.open_example(e))
+        if not self.examples:
+            self.examples_menu.addAction(self.tr("No examples found")).setEnabled(False)
         tools.addAction(self.act_tracks)
         tools.addSeparator()
         tools.addAction(self.act_setup)
@@ -342,12 +358,15 @@ class MainWindow(QMainWindow):
         self.act_restart.setIcon(icon("mdi6.restart"))
         self.tabs.setTabIcon(0, icon("mdi6.cube-outline"))
         self.tabs.setTabIcon(1, icon("mdi6.chart-bell-curve-cumulative"))
+        self.tabs.setTabIcon(2, icon("mdi6.file-code-outline"))
         self.act_libraries.setIcon(icon("mdi6.database-outline"))
         self.act_tracks.setIcon(icon("mdi6.atom-variant"))
+        self.examples_menu.setIcon(icon("mdi6.school-outline"))
         if self.tracks_window is not None:
             self.tracks_window.refresh_icons()
         self.geometry_tab.refresh_icon()
         self.simulation_tab.refresh_icons()
+        self.input_tab.refresh_icons()
 
     def _restore_window(self) -> None:
         geometry = self.settings.window_geometry
@@ -360,6 +379,7 @@ class MainWindow(QMainWindow):
             self.restoreState(state)
         self.geometry_tab.restore_state(self.settings.geometry_splitter)
         self.simulation_tab.restore_state(self.settings.simulation_splitter)
+        self.input_tab.restore_state(self.settings.input_splitter)
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
@@ -379,6 +399,7 @@ class MainWindow(QMainWindow):
         self.settings.window_state = self.saveState()
         self.settings.geometry_splitter = self.geometry_tab.save_state()
         self.settings.simulation_splitter = self.simulation_tab.save_state()
+        self.settings.input_splitter = self.input_tab.save_state()
         if self.tracks_window is not None:
             self.settings.tracks_window = self.tracks_window.saveGeometry()
         self.settings.sync()
@@ -474,6 +495,50 @@ class MainWindow(QMainWindow):
             self.session.open(path)
         else:
             self._pending_open = path
+
+    def open_example(self, example: Example) -> None:
+        """Open the workspace copy of an example; copy it there first if needed."""
+        workspace = self.backend.config.workspace
+        state = example.copy_state(workspace)
+        restore = state is CopyState.MISSING
+        if state is CopyState.CHANGED:
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Icon.Question)
+            box.setWindowTitle(self.tr("Examples"))
+            text = self.tr("Your workspace already has a changed copy of the example “{title}”.")
+            box.setText(text.format(title=example.title(self.language)))
+            box.setInformativeText(
+                self.tr(
+                    "Open your copy, or replace its files with the original? The runs of "
+                    "your copy are kept either way."
+                )
+            )
+            own = box.addButton(self.tr("Open my copy"), QMessageBox.ButtonRole.AcceptRole)
+            original = box.addButton(
+                self.tr("Restore the original"), QMessageBox.ButtonRole.DestructiveRole
+            )
+            box.addButton(QMessageBox.StandardButton.Cancel)
+            box.setDefaultButton(own)
+            box.exec()
+            if box.clickedButton() not in (own, original):
+                return
+            restore = box.clickedButton() is original
+        path = example.copy_model(workspace)
+        if restore:
+            try:
+                path = example.copy_to(workspace)
+            except OSError as exc:
+                log.warning("copying example %s failed: %s", example.folder.name, exc)
+                QMessageBox.warning(
+                    self,
+                    self.tr("Examples"),
+                    self.tr("The example could not be copied into the workspace: {error}").format(
+                        error=exc
+                    ),
+                )
+                return
+            self.session.accept_file_changes()
+        self.request_open(path)
 
     def reload_model(self) -> None:
         if self.session.path is not None and self.session.ready:
@@ -603,6 +668,7 @@ class MainWindow(QMainWindow):
         self.simulation_tab.set_busy(False)
         self.geometry_tab.show_model(info, reloaded)
         self.simulation_tab.show_model(info)
+        self.input_tab.show_model(self.session.path)
         if self.tracks_window is not None:
             self.tracks_window.set_model(info)
         self._fill_mode_controls(info)
@@ -631,6 +697,16 @@ class MainWindow(QMainWindow):
             box.setDetailedText(detail)
             box.setInformativeText(detail.strip().splitlines()[-1][:300])
         box.exec()
+
+    def _run_selected(self, run_id: str | None) -> None:
+        """The run shown in the Simulation tab: the Input tab lists the code it kept."""
+        run = self.simulation_tab.run_info(run_id)
+        folder = self.simulation_tab.run_folder(run_id) if run_id is not None else None
+        self.input_tab.set_run(run, folder)
+
+    def _tab_changed(self, index: int) -> None:
+        if self.tabs.widget(index) is self.input_tab:
+            self.input_tab.focus_code()
 
     def _model_files_changed(self) -> None:
         policy = self.settings.reload_on_change

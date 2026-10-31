@@ -8,10 +8,12 @@ from pathlib import Path
 import pytest
 from run_doubles import manager_for
 
+from pyvised_backend import runs
 from pyvised_backend.errors import ServiceError
-from pyvised_backend.runs import RunManager, complete_utf8, folder_name
+from pyvised_backend.runs import RunManager, complete_utf8, copy_input, folder_name
 from pyvised_protocol.runs import (
     FINAL_STATES,
+    INPUT_FOLDER,
     LOG_FILE,
     RUN_FILE,
     RunInfo,
@@ -175,6 +177,46 @@ def test_history_log_and_delete(workspace: Path, tmp_path: Path):
     with pytest.raises(ServiceError) as caught:
         manager.status(info.id)
     assert caught.value.status == 404
+
+
+def test_a_run_keeps_the_model_code_it_started_with(workspace: Path, tmp_path: Path):
+    folder = workspace / "hw"
+    (folder / "model.py").write_text("import helper\n", encoding="utf-8")
+    (folder / "helper.py").write_text("R = 3\n", encoding="utf-8")
+    (folder / "notes.ipynb").write_text('{"cells": []}', encoding="utf-8")
+    for name in ("pyvised.json", "data.json", "table.csv", "model.xml"):
+        (folder / name).write_text("{}", encoding="utf-8")
+    (folder / "lib").mkdir()
+    (folder / "lib" / "deep.py").write_text("", encoding="utf-8")
+    manager, _ = manager_for(workspace, tmp_path)
+    info = manager.start(request())
+    (folder / "helper.py").write_text("R = 4\n", encoding="utf-8")  # edited during the run
+    wait_until_final(manager, info.id)
+    copies = workspace / info.path / INPUT_FOLDER
+    assert sorted(p.name for p in copies.iterdir()) == ["helper.py", "model.py", "notes.ipynb"]
+    assert (copies / "helper.py").read_text(encoding="utf-8") == "R = 3\n"
+    assert manager.list("hw/model.py")[0].id == info.id, "still listed as a run"
+
+    (workspace / "xml").mkdir()
+    (workspace / "xml" / "model.xml").write_text("<model/>", encoding="utf-8")
+    (workspace / "xml" / "helper.py").write_text("", encoding="utf-8")
+    xml = manager.start(request().model_copy(update={"path": "xml/model.xml", "label": "x"}))
+    wait_until_final(manager, xml.id)
+    assert not (workspace / xml.path / INPUT_FOLDER).exists(), "an XML model has no code"
+
+
+def test_keeping_the_input_never_stops_a_run(tmp_path: Path, monkeypatch):
+    model = tmp_path / "m" / "model.py"
+    model.parent.mkdir()
+    model.write_text("", encoding="utf-8")
+    run = tmp_path / "run"
+    run.mkdir()
+
+    def refuse(*args, **kwargs):
+        raise PermissionError("locked")
+
+    monkeypatch.setattr(runs.shutil, "copy2", refuse)
+    assert copy_input(model, run) == []
 
 
 def test_run_ids_stay_in_the_workspace(workspace: Path, tmp_path: Path):

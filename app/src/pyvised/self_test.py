@@ -22,7 +22,8 @@ from PySide6.QtWidgets import QApplication
 from . import __version__
 from .backend.client import ApiClient
 from .backend.manager import BackendConfig, BackendManager, BackendState, Transfer
-from .core.paths import app_icon_path, i18n_dir, log_dir, logo_path
+from .core.examples import find_examples
+from .core.paths import app_icon_path, examples_dir, i18n_dir, log_dir, logo_path
 from .core.settings import AppSettings
 from .core.tasks import TaskRunner
 
@@ -72,6 +73,7 @@ def run_self_test(
         f"platform {app.platformName()}, style {app.style().name()}",
     )
     _check_resources(report)
+    _check_examples(report)
     _check_translations(report)
     _check_window(settings, report)
     if backend:
@@ -113,6 +115,14 @@ def _check_resources(report: Report) -> None:
     icon = app_icon_path()
     ok = icon.is_file() and logo_path().is_file() and not QIcon(str(icon)).isNull()
     report.add(ok, f"resources: app icon and logo in {icon.parent}")
+
+
+def _check_examples(report: Report) -> None:
+    folder = examples_dir()
+    examples, problems = find_examples(folder)
+    report.add(bool(examples) and not problems, f"examples: {len(examples)} in {folder}")
+    for problem in problems:
+        report.say(f"       {problem}")
 
 
 def _check_translations(report: Report) -> None:

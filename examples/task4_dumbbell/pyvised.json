@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "title": {
+    "en": "Double dumbbell",
+    "hu": "Dupla súlyzó"
+  },
+  "description": {
+    "en": "Create a dumbbell-shaped geometry to practice geometry modeling.\nIn this example two dumbbells cross at the centre. The vertical one is a water cylinder with an iron sphere at each end: the upper sphere is cut by the cylinder, the lower one cuts into it. The horizontal one is an iron rod through the water cylinder with a lead sphere at each end, cut the same way. A 1 MeV point photon source sits at the centre.",
+    "hu": "Készítsünk egy „súlyzó” alakú geometriát a geometria modellezésének gyakorlására.\nEbben a példában két súlyzó keresztezi egymást a középpontban. A függőleges egy vízhenger, mindkét végén egy-egy vasgömbbel: a felső gömbbe a henger vág bele, az alsó gömb a hengerbe. A vízszintes egy vasrúd, amely átmegy a vízhengeren, végein egy-egy ólomgömbbel, ugyanígy egymásba vágva. A középpontban 1 MeV-es pontszerű fotonforrás van."
+  },
+  "material_colors": {
+    "1": "#4a90d9",
+    "2": "#9aa1a8",
+    "3": "#4f5563"
+  },
+  "parameters": [
+    {
+      "name": "vertical_radius",
+      "label": {
+        "en": "Vertical rod (water) radius",
+        "hu": "A függőleges rúd (víz) sugara"
+      },
+      "unit": "cm",
+      "default": 5.0,
+      "minimum": 0.5,
+      "maximum": 20.0,
+      "step": 0.5
+    },
+    {
+      "name": "vertical_distance",
+      "label": {
+        "en": "Iron spheres' distance from the centre",
+        "hu": "A vasgömbök távolsága a középponttól"
+      },
+      "unit": "cm",
+      "default": 20.0,
+      "minimum": 2.0,
+      "maximum": 80.0,
+      "step": 1.0
+    },
+    {
+      "name": "vertical_sphere",
+      "label": {
+        "en": "Iron sphere radius",
+        "hu": "A vasgömbök sugara"
+      },
+      "unit": "cm",
+      "default": 7.0,
+      "minimum": 0.5,
+      "maximum": 30.0,
+      "step": 0.5
+    },
+    {
+      "name": "horizontal_radius",
+      "label": {
+        "en": "Horizontal rod (iron) radius",
+        "hu": "A vízszintes rúd (vas) sugara"
+      },
+      "unit": "cm",
+      "default": 2.0,
+      "minimum": 0.5,
+      "maximum": 20.0,
+      "step": 0.5
+    },
+    {
+      "name": "horizontal_distance",
+      "label": {
+        "en": "Lead spheres' distance from the centre",
+        "hu": "Az ólomgömbök távolsága a középponttól"
+      },
+      "unit": "cm",
+      "default": 10.0,
+      "minimum": 2.0,
+      "maximum": 80.0,
+      "step": 1.0
+    },
+    {
+      "name": "horizontal_sphere",
+      "label": {
+        "en": "Lead sphere radius",
+        "hu": "Az ólomgömbök sugara"
+      },
+      "unit": "cm",
+      "default": 3.0,
+      "minimum": 0.5,
+      "maximum": 30.0,
+      "step": 0.5
+    },
+    {
+      "name": "world_radius",
+      "label": {
+        "en": "Enclosing sphere radius",
+        "hu": "A befoglaló gömb sugara"
+      },
+      "unit": "cm",
+      "default": 30.0,
+      "minimum": 5.0,
+      "maximum": 100.0,
+      "step": 1.0
+    }
+  ],
+  "tallies": {
+    "4": {
+      "source_strength": 1000000.0,
+      "divide_by": "volume",
+      "divisor": "(world_radius/30)**2*2",
+      "unit": "1/(cm²·s)",
+      "note": "fm4 1e6: 1e6 photons/s; OpenMC does not divide a mesh flux by the element volume, (2·world_radius/60)² × 2 cm³"
+    }
+  },
+  "run_presets": [
+    {
+      "name": "quick",
+      "label": {
+        "en": "Quick look (10 × 10000 photons)",
+        "hu": "Gyors próba (10 × 10000 foton)"
+      },
+      "particles": 10000,
+      "batches": 10,
+      "note": {
+        "en": "1e5 photons; the flux map is still grainy away from the centre.",
+        "hu": "1e5 foton; a fluxustérkép a középponttól távol még szemcsés."
+      }
+    }
+  ]
+}

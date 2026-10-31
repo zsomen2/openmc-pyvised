@@ -78,6 +78,11 @@ def test_invalid_values_fall_back(settings: AppSettings):
     assert settings.default_views == ("xz", "xy")
     settings._store.setValue("general/reload_on_change", "sometimes")
     assert settings.reload_on_change is ReloadPolicy.ASK
+    assert settings.input_font_size == 10
+    settings._store.setValue("input/font_size", "huge")
+    assert settings.input_font_size == 10
+    settings.input_font_size = 300
+    assert settings.input_font_size == 40
 
 
 def test_recent_models_are_newest_first_without_duplicates(settings: AppSettings, tmp_path: Path):

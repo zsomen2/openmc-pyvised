@@ -29,6 +29,10 @@ TRACK_STYLE_DEFAULTS = {
     "markers": "births,collisions,ends",
     "timeline": "events",
 }
+CODE_FONT_DEFAULT = 10
+CODE_FONT_MIN = 6
+CODE_FONT_MAX = 40
+"""[pt] Font sizes of the Input tab's code view."""
 
 
 class ThemeMode(StrEnum):
@@ -305,6 +309,18 @@ class AppSettings:
     def tracks_window(self, value: QByteArray) -> None:
         self._store.setValue("tracks/window", value)
 
+    # -- input -------------------------------------------------------------
+
+    @property
+    def input_font_size(self) -> int:
+        """Point size of the code in the Input tab (Ctrl+wheel, Ctrl+plus/minus/0)."""
+        value = self._int("input/font_size", CODE_FONT_DEFAULT)
+        return min(CODE_FONT_MAX, max(CODE_FONT_MIN, value))
+
+    @input_font_size.setter
+    def input_font_size(self, value: int) -> None:
+        self._store.setValue("input/font_size", min(CODE_FONT_MAX, max(CODE_FONT_MIN, int(value))))
+
     # -- backend -------------------------------------------------------------
 
     @property
@@ -408,6 +424,15 @@ class AppSettings:
     @simulation_splitter.setter
     def simulation_splitter(self, value: QByteArray) -> None:
         self._store.setValue("window/simulation_splitter", value)
+
+    @property
+    def input_splitter(self) -> QByteArray | None:
+        value = self._store.value("window/input_splitter")
+        return value if isinstance(value, QByteArray) else None
+
+    @input_splitter.setter
+    def input_splitter(self, value: QByteArray) -> None:
+        self._store.setValue("window/input_splitter", value)
 
     def _enum[E: StrEnum](self, key: str, kind: type[E], default: E) -> E:
         try:

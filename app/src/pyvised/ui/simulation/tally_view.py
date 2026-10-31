@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from pyvised_protocol.runs import RunInfo, RunResults, TallyResult
-from pyvised_protocol.sidecar import Sidecar, TallyNormalisation
+from pyvised_protocol.sidecar import Sidecar, TallyNormalisation, formula_names
 
 from ...backend.client import TallyData
 from ...render import tallies as tm
@@ -46,6 +46,7 @@ class TallyTableModel(QAbstractTableModel):
         self.mean = np.zeros((0,))
         self.std = np.zeros((0,))
         self.norm: TallyNormalisation | None = None
+        self.params: dict[str, float] = {}
         self.seconds: float | None = None
         self.unit = "eV"
         self._filters: list[int] = []
@@ -59,12 +60,14 @@ class TallyTableModel(QAbstractTableModel):
         norm: TallyNormalisation | None,
         seconds: float | None,
         unit: str = "eV",
+        params: dict[str, float] | None = None,
     ) -> None:
         self.beginResetModel()
         self.tally = data.tally if data is not None else None
         self.mean = np.asarray(data.mean) if data is not None else np.zeros((0,))
         self.std = np.asarray(data.std) if data is not None else np.zeros((0,))
         self.norm, self.seconds, self.unit = norm, seconds, unit
+        self.params = params or {}
         self._shape = tuple(self.mean.shape)
         tally = self.tally
         self._filters = [i for i, f in enumerate(tally.filters) if f.bins > 1] if tally else []
@@ -128,7 +131,7 @@ class TallyTableModel(QAbstractTableModel):
             if column == 0:
                 return tally.scores[bins[-1]]
             column -= 1
-        scale = tm.factor(self.norm)
+        scale = tm.factor(self.norm, self.params)
         values = [
             f"{mean:.6g}",
             "–" if std is None else f"{std:.3g}",
@@ -161,6 +164,12 @@ class NormalisationPanel(QGroupBox):
         self.divide.addItem(self.tr("area [cm²]"), "area")
         self.divisor = QLineEdit()
         self.divisor.setPlaceholderText(self.tr("volume or area"))
+        self.divisor.setToolTip(
+            self.tr(
+                "A number, or a formula of the builder parameters when the volume or area "
+                "depends on them: + − * / **, brackets and pi, e.g. 4*pi*radius**2"
+            )
+        )
         self.multiplier = QLineEdit()
         self.multiplier.setPlaceholderText("1")
         self.unit = QLineEdit()
@@ -198,7 +207,10 @@ class NormalisationPanel(QGroupBox):
         n = norm or TallyNormalisation()
         self.source.setText("" if norm is None else f"{n.source_strength:g}")
         self.divide.setCurrentIndex(max(0, self.divide.findData(n.divide_by)))
-        self.divisor.setText("" if n.divisor is None else f"{n.divisor:.10g}")
+        if isinstance(n.divisor, str):
+            self.divisor.setText(n.divisor)
+        else:
+            self.divisor.setText("" if n.divisor is None else f"{n.divisor:.10g}")
         self.multiplier.setText("" if norm is None else f"{n.multiplier:g}")
         self.unit.setText(n.unit)
         self.note.setText(n.note)
@@ -218,9 +230,18 @@ class NormalisationPanel(QGroupBox):
             return default
         return float(text)
 
+    def _divisor(self) -> float | str | None:
+        """A number, or a formula of the builder parameters (checked when it is saved)."""
+        text = self.divisor.text().strip()
+        try:
+            return self._number(self.divisor, None)
+        except ValueError:
+            formula_names(text)
+            return text
+
     def value(self) -> TallyNormalisation:
         divide = self.divide.currentData()
-        divisor = self._number(self.divisor, None) if divide != "none" else None
+        divisor = self._divisor() if divide != "none" else None
         if divide != "none" and not divisor:
             raise ValueError(self.tr("Enter the volume or the area to divide by."))
         return TallyNormalisation(
@@ -353,6 +374,10 @@ class TallyView(QWidget):
         tid = self.tally_id
         return self.sidecar.tallies.get(tid) if self.sidecar and tid is not None else None
 
+    def params(self) -> dict[str, float]:
+        """Builder parameters of the shown run, for a normalisation that depends on them."""
+        return self.run.params if self.run is not None else {}
+
     def _chosen(self, index: int) -> None:
         self.data = None
         self.model.set_data(None, None, None)
@@ -375,7 +400,7 @@ class TallyView(QWidget):
             text += " · " + self.tr("{n} bins without a result").format(n=tally.zero_bins)
         self.filters.setText(text)
         norm = self.norm()
-        scale = tm.factor(norm)
+        scale = tm.factor(norm, self.params())
         lines = []
         for nuclide, score, total in tm.totals(tally):
             rel = tm.rel_err(total.value, total.std)
@@ -397,7 +422,7 @@ class TallyView(QWidget):
         if self.data is None:
             return
         seconds = self.results.active_seconds if self.results else None
-        self.model.set_data(self.data, self.norm(), seconds, self.unit.currentData())
+        self.model.set_data(self.data, self.norm(), seconds, self.unit.currentData(), self.params())
         self.table.resizeColumnsToContents()
         self.export_button.setEnabled(True)
 
@@ -409,4 +434,6 @@ class TallyView(QWidget):
         if self.data is None:
             return ""
         seconds = self.results.active_seconds if self.results else None
-        return tm.csv_text(self.data.tally, self.data.mean, self.data.std, self.norm(), seconds)
+        return tm.csv_text(
+            self.data.tally, self.data.mean, self.data.std, self.norm(), seconds, self.params()
+        )
