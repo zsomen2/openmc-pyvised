@@ -5,8 +5,8 @@ with geometry visualisation and simulation controls, made for teaching Monte Car
 transport. OpenMC does not run natively on Windows, so PyVised starts and manages it in a
 Docker container in the background; you only see one window.
 
-**Status:** 1.0.1, the first release with all the main features. Example models of the course
-tasks (Tools › Examples) are being added one by one.
+**Status:** 1.0.2: all the main features, and example models of all nine course tasks
+(Tools › Examples).
 
 - **Geometry:** open an OpenMC model and inspect it in two linked slice views coloured by
   material, cell, universe (at any nesting level), density, temperature or importance
@@ -107,7 +107,7 @@ just check-install   # install it silently for you, self-test it, uninstall it
 just backend-save    # dist/pyvised-backend-<version>.tar: the offline image file
 ```
 
-Releases: the app, backend and protocol share one version (`just set-version 1.0.1`). Pushing
+Releases: the app, backend and protocol share one version (`just set-version 1.0.2`). Pushing
 the tag `v<version>` runs `.github/workflows/release.yml`: it checks and builds everything,
 pushes `ghcr.io/zsomen2/pyvised-backend:<version>` and drafts a GitHub release with the
 installer, the offline image file and their checksums. The app downloads the image tag of
